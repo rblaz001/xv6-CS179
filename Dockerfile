@@ -1,5 +1,5 @@
 #https://github.com/kmontg/xv6-docker
-FROM ubuntu:latest
+FROM ubuntu:16.04
 
 RUN apt-get -qq update
 
@@ -8,6 +8,10 @@ RUN apt-get install -y git \
                     gdb \
                     gcc-multilib \
                     tmux
+
+RUN apt-get install -y python \
+                    flex \
+                    bison
 
 RUN git clone http://web.mit.edu/ccutler/www/qemu.git -b 6.828-2.3.0
 
@@ -23,8 +27,8 @@ RUN cd qemu && \
         make install && \
         cd ..
 
-ADD ./jos jos
+ADD ./* xv6/
 
-WORKDIR jos
+WORKDIR xv6/
 
 CMD ["sh"]
