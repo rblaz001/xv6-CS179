@@ -89,3 +89,16 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int
+sys_kt_create(void)
+{
+  void* fnc;
+  void* arg;
+  int size;
+  
+  if(argint(2,&size) || argptr(0, &fnc, ) || argptr(1, &arg, size) < 0)
+    return -1;
+
+  return KT_Create(&a, &b);
+}
