@@ -93,12 +93,12 @@ sys_uptime(void)
 int
 sys_kt_create(void)
 {
-  void* fnc;
-  void* arg;
-  int size;
+  char* fnc;
+  char* arg;
   
-  if(argint(2,&size) || argptr(0, &fnc, ) || argptr(1, &arg, size) < 0)
+  //Possible exploit by not having size of arg value
+  if(argptr(0, &fnc, sizeof(int)) || argptr(1, &arg, 0) < 0)
     return -1;
 
-  return KT_Create(&a, &b);
+  return KT_Create((void*)fnc, arg);
 }
