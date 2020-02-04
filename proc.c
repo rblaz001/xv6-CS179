@@ -115,6 +115,50 @@ found:
   return p;
 }
 
+static struct proc*
+tallocproc(void)
+{
+  struct proc *p;
+  char *sp;
+
+  acquire(&ptable.lock);
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    if(p->state == UNUSED)
+      goto found;
+
+  release(&ptable.lock);
+  return 0;
+
+found:
+  p->state = EMBRYO;
+
+  release(&ptable.lock);
+
+  // Allocate kernel stack.
+  if((p->kstack = kalloc()) == 0){
+    p->state = UNUSED;
+    return 0;
+  }
+  sp = p->kstack + KSTACKSIZE;
+
+  // Leave room for trap frame.
+  sp -= sizeof *p->tf;
+  p->tf = (struct trapframe*)sp;
+
+  // Set up new context to start executing at forkret,
+  // which returns to trapret.
+  sp -= 4;
+  *(uint*)sp = (uint)trapret;
+
+  sp -= sizeof *p->context;
+  p->context = (struct context*)sp;
+  memset(p->context, 0, sizeof *p->context);
+  p->context->eip = (uint)forkret;
+
+  return p;
+}
+
 //PAGEBREAK: 32
 // Set up first user process.
 void
@@ -219,6 +263,41 @@ fork(void)
   release(&ptable.lock);
 
   return pid;
+}
+
+int clone(void* stack, int size, void (*fnc)(void*), void* arg){
+  struct proc* nt;
+  struct proc* cur_thread = myproc();
+
+   if((nt = tallocproc()) == 0){
+    return -1;
+  }
+
+  nt->thread_count = -1;
+  nt->pthread = cur_thread;
+
+  nt->pgdir = cur_thread->pgdir;
+  // nt->sz = cur_thread-sz;
+  nt->tf = cur_thread->tf;
+
+  for(i = 0; i < NOFILE; i++)
+    nt->ofile[i] = cur_thread->ofile[i];
+  nt->cwd = cur_thread->cwd;
+
+  safestrcpy(nt->name, cur_thread->name, sizeof(cur_thread->name));
+
+  nt->pid = cur_thread->pid;
+  nt->tid = cur_thread->tid + 1;
+
+
+  acquire(&ptable.lock);
+
+  cur_thread->thread_count++;
+  nt->state = RUNNABLE;
+
+  release(&ptable.lock);
+
+  return nt->tid;
 }
 
 // Exit the current process.  Does not return.

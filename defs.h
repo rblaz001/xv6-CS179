@@ -121,6 +121,7 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             KT_Create(void (*fnc)(void*), void* arg);
+int             clone(void, int)
 
 // swtch.S
 void            swtch(struct context**, struct context*);
