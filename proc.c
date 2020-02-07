@@ -265,7 +265,7 @@ fork(void)
   return pid;
 }
 
-int clone(void* stack, int size, void (*fnc)(void*), void* arg){
+int clone(void* sp, int size, void (*fnc)(void*), void* arg){
   struct proc* nt;
   struct proc* cur_thread = myproc();
 
@@ -280,7 +280,7 @@ int clone(void* stack, int size, void (*fnc)(void*), void* arg){
   // nt->sz = cur_thread-sz;
   nt->tf = cur_thread->tf;
 
-  for(i = 0; i < NOFILE; i++)
+  for(int i = 0; i < NOFILE; i++)
     nt->ofile[i] = cur_thread->ofile[i];
   nt->cwd = cur_thread->cwd;
 
@@ -289,6 +289,19 @@ int clone(void* stack, int size, void (*fnc)(void*), void* arg){
   nt->pid = cur_thread->pid;
   nt->tid = cur_thread->tid + 1;
 
+  //Populating user stack with fake return and argument to passed function
+  uint ustack[2];
+  
+  ustack[0] = 0xffffffff;  // fake return PC
+  ustack[1] = arg;         // pointer to argument that is passed to function
+  
+  if(copyout(nt->pgdir, sp, ustack, 2*4) < 0)
+    return -1;
+
+  // curproc->sz = nt->sz;
+  nt->tf->eip = fnc;  // set entry point to function pointer
+  // Need to update the stack pointer to point to the top of the stack.
+  nt->tf->esp = sp;   // set user stack 
 
   acquire(&ptable.lock);
 
