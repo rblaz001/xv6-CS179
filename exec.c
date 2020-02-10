@@ -63,7 +63,7 @@ exec(char *path, char **argv)
 
   // Allocate two pages. Top to bottom
   // Make the second inaccessible.  Use the first as the user stack.
-  if(sp = (allocuvm(pgdir, STACKBOTTOM, STACKBOTTOM - 2*PGSIZE)) == 0)
+  if(sp = (allocuvm(pgdir, STACKBOTTOM - 2*PGSIZE, STACKBOTTOM)) == 0)
     goto bad;
   // Clear the first page table allocated and make inaccessible
   clearpteu(pgdir, (char*)(STACKBOTTOM - 2*PGSIZE)); // Clears 1 page table upward starting from pointer

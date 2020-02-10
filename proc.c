@@ -270,6 +270,54 @@ fork(void)
   return pid;
 }
 
+void KT_Create(void (*fnc)(void*), void* arg){
+  // Check for if a null pointer is passed as a fnc
+  void *sp = NULL;
+  if (fnc == NULL)
+    return -1
+
+  struct proc *curproc = myproc();
+
+  acquire(&sltable.lock);
+  if (curproc->psl == NULL){
+    for(sl = sltable.proc; sl < &sltable.proc[NPROC]; sl++){
+      if (sl->state != UNUSED)
+        continue;
+      
+      sl->state = 1;
+      curproc->psl = sl;
+      // Setting the first stack position to occupied in our psl's stackz
+      sl->stackz[0] = 1;
+
+    //allocate second thread's stack
+    if ((sp = allocuvm(pgdir, STACKBOTTOM - 4*PGSIZE, STACKBOTTOM - 2*PGSIZE)) == 0)
+      goto bad;
+
+    clearpteu(pgdir, (char*)(STACKBOTTOM - 4*PGSIZE)); // Clears 1 page table upward starting from pointer
+    sl->stackz[1] = 1;
+    }
+  }
+  else{
+    for (int i = 0; i < 8; i++){
+      if (curproc->psl->stackz[i] == 0){
+        if ((sp = allocuvm(pgdir, STACKBOTTOM - i*2*PGSIZE, STACKBOTTOM - (i*2*PGSIZE + 2*PGSIZE))) == 0)
+          goto bad;
+        clearpteu(pgdir, (char*)(STACKBOTTOM - i*2*PGSIZE)); // Clears 1 page table upward starting from pointer
+        curproc->psl->stackz[i] = 1;
+      }
+    } 
+  }
+
+  release(&sltable.lock)
+  clone(sp, 0, fnc, arg)
+  
+  bad:
+    release(&sltable.lock)
+    if(curproc->pgdir)
+      freevm(curproc->pgdir)
+
+}
+
 int clone(void* sp, int size, void (*fnc)(void*), void* arg){
   struct proc* nt;
   struct proc* cur_thread = myproc();

@@ -15,4 +15,4 @@
 #define P2V_WO(x) ((x) + KERNBASE)    // same as P2V, but without casts
 
 // Address of bottom of first user stack in virtual memory
-#define STACKBOTTOM (KERNBASE-4)
+#define STACKBOTTOM (PGROUNDDOWN(KERNBASE-4))

@@ -41,6 +41,7 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 struct psl {
   int pid;
   int stackz[8];
+  enum procstate state;
 };
 
 // Per-Thread state
@@ -62,6 +63,7 @@ struct proc {
   int thread_count;            // Number of threads currently active
   struct proc *pthread;        // Parent thread
   struct proc *rootp;          // root thread pointer
+  struct psl * psl;            // pointer to per-process list of stacks
 };
 
 // Process memory is laid out contiguously, low addresses first:
