@@ -34,7 +34,16 @@ struct context {
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
-// Per-process state
+// Per-Process list of available user stacks - process stack list
+// Used to allocate user stack space based on a i*2 PAGESIZE offset
+// Where i is the index for stackz 
+// stackz[i] = 0 means unused stack, stackz[i] = 1 means stack is in use
+struct psl {
+  int pid;
+  int stackz[8];
+};
+
+// Per-Thread state
 struct proc {
   uint sz;                     // Size of process memory (bytes)
   pde_t* pgdir;                // Page table
@@ -48,7 +57,7 @@ struct proc {
   int killed;                  // If non-zero, have been killed
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
-  char name[16];               // Process name (debugging)
+  char name[16];               // Process name (debugging) 
   int tid;                     // Thread ID
   int thread_count;            // Number of threads currently active
   struct proc *pthread;        // Parent thread

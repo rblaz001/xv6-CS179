@@ -9,8 +9,13 @@
 
 struct {
   struct spinlock lock;
-  struct proc proc[NPROC];
+  struct proc proc[8*NPROC];
 } ptable;
+
+struct {
+  struct spinlock lock;
+  struct psl psl[NPROC];
+} sltable;
 
 static struct proc *initproc;
 
