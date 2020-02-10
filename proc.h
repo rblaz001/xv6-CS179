@@ -51,8 +51,8 @@ struct proc {
   char name[16];               // Process name (debugging)
   int tid;                     // Thread ID
   int thread_count;            // Number of threads currently active
-  struct* proc pthread;        // Parent thread
-  struct* proc rootp;          // root thread pointer
+  struct proc *pthread;        // Parent thread
+  struct proc *rootp;          // root thread pointer
 };
 
 // Process memory is laid out contiguously, low addresses first:

@@ -61,13 +61,12 @@ exec(char *path, char **argv)
   ip = 0;
   sz = PGROUNDUP(sz);
 
-  // Allocate two pages.
-  // Make the first inaccessible.  Use the second as the user stack.
-  if((allocuvm(pgdir, STACKBOTTOM, STACKBOTTOM - 2*PGSIZE)) == 0)
+  // Allocate two pages. Top to bottom
+  // Make the second inaccessible.  Use the first as the user stack.
+  if(sp = (allocuvm(pgdir, STACKBOTTOM, STACKBOTTOM - 2*PGSIZE)) == 0)
     goto bad;
   // Clear the first page table allocated and make inaccessible
-  clearpteu(pgdir, (char*)(STACKBOTTOM - PGSIZE)); // Clears 1 page table upward starting from pointer
-  sp = STACKBOTTOM - PGSIZE - 1;
+  clearpteu(pgdir, (char*)(STACKBOTTOM - 2*PGSIZE)); // Clears 1 page table upward starting from pointer
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {

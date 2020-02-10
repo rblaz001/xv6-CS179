@@ -277,7 +277,7 @@ int clone(void* sp, int size, void (*fnc)(void*), void* arg){
   nt->pthread = cur_thread;
 
   nt->pgdir = cur_thread->pgdir;
-  // nt->sz = cur_thread-sz;
+  nt->sz = cur_thread->sz;
   nt->tf = cur_thread->tf;
 
   for(int i = 0; i < NOFILE; i++)
@@ -294,11 +294,11 @@ int clone(void* sp, int size, void (*fnc)(void*), void* arg){
   
   ustack[0] = 0xffffffff;  // fake return PC
   ustack[1] = arg;         // pointer to argument that is passed to function
-  
+  sp -= 2*4;               // make room for ustack on the stack
+
   if(copyout(nt->pgdir, sp, ustack, 2*4) < 0)
     return -1;
 
-  // curproc->sz = nt->sz;
   nt->tf->eip = fnc;  // set entry point to function pointer
   // Need to update the stack pointer to point to the top of the stack.
   nt->tf->esp = sp;   // set user stack 
