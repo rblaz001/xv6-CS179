@@ -39,9 +39,10 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 // Where i is the index for stackz 
 // stackz[i] = 0 means unused stack, stackz[i] = 1 means stack is in use
 struct psl {
-  int pid;
-  int stackz[8];
-  enum procstate state;
+  int pid;                     // Process ID
+  int stackz[8];               // List of available stacks
+  enum procstate state;        // Used to find unused process stack list
+                               // valid values are UNUSED or 1.
 };
 
 // Per-Thread state

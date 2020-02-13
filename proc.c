@@ -9,9 +9,10 @@
 
 struct {
   struct spinlock lock;
-  struct proc proc[8*NPROC];
+  struct proc proc[NPROC];   // 8 threads possible per process
 } ptable;
 
+// process stack list table
 struct {
   struct spinlock lock;
   struct psl psl[NPROC];
@@ -29,6 +30,7 @@ void
 pinit(void)
 {
   initlock(&ptable.lock, "ptable");
+  initlock(&sltable.lock, "sltable");   // Initialize lock for sltable
 }
 
 // Must be called with interrupts disabled
