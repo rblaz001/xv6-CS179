@@ -495,11 +495,16 @@ wait(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        freevm(p->pgdir);
+        if(p->psl == 0 || p->psl->thread_count == 0)
+          freevm(p->pgdir);
         p->pid = 0;
         p->parent = 0;
         p->name[0] = 0;
         p->killed = 0;
+        p->tid = 0;
+        p->pthread = 0;
+        p->psl = 0;
+        p->slindex = 0;
         p->state = UNUSED;
         release(&ptable.lock);
         return pid;
