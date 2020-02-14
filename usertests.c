@@ -17,7 +17,6 @@ int stdout = 1;
 void
 iputtest(void)
 {
-  printf
   printf(stdout, "iput test\n");
 
   if(mkdir("iputdir") < 0){
@@ -1746,22 +1745,10 @@ rand()
   return randstate;
 }
 
-void fun(int a) 
-{ 
-    printf("Value of a is %d\n", a); 
-} 
-
 int
 main(int argc, char *argv[])
 {
   printf(1, "usertests starting\n");
-
-  void (*fun_ptr)(int) = &fun;
-  printf((sizeof(*fun_ptr))
-
-  functionPointSize()
-  return 0
-
 
   if(open("usertests.ran", 0) >= 0){
     printf(1, "already ran user tests -- rebuild fs.img\n");
