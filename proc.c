@@ -299,7 +299,7 @@ int KT_Create(void (*fnc)(void*), void* arg){
       slindex = 1;            // Set stack list index for new stack to 1
 
     //allocate second thread's stack
-    if ((sp = allocuvm(curproc->pgdir, STACKBOTTOM - 4*PGSIZE, STACKBOTTOM - 2*PGSIZE)) == 0)
+    if ((sp = (void*)allocuvm(curproc->pgdir, STACKBOTTOM - 4*PGSIZE, STACKBOTTOM - 2*PGSIZE)) == 0)
       goto bad;
 
     clearpteu(curproc->pgdir, (char*)(STACKBOTTOM - 4*PGSIZE)); // Clears 1 page table upward starting from pointer
@@ -318,7 +318,7 @@ int KT_Create(void (*fnc)(void*), void* arg){
     // Allocating user stack
     for (int i = 0; i < 8; i++){
       if (curproc->psl->stackz[i] == 0){
-        if ((sp = allocuvm(curproc->pgdir, STACKBOTTOM - 2*PGSIZE - i*2*PGSIZE, STACKBOTTOM - i*2*PGSIZE)) == 0)
+        if ((sp = (void*)allocuvm(curproc->pgdir, STACKBOTTOM - 2*PGSIZE - i*2*PGSIZE, STACKBOTTOM - i*2*PGSIZE)) == 0)
           goto bad;
 
         clearpteu(curproc->pgdir, (char*)(STACKBOTTOM - 2*PGSIZE - i*2*PGSIZE)); // Clears 1 page table upward starting from pointer
@@ -337,7 +337,7 @@ int KT_Create(void (*fnc)(void*), void* arg){
     release(&sltable.lock);
     if(curproc->pgdir)
       freevm(curproc->pgdir);
-
+    return -1;
 }
 
 int clone(void* sp, int slindex, void (*fnc)(void*), void* arg){
@@ -367,15 +367,15 @@ int clone(void* sp, int slindex, void (*fnc)(void*), void* arg){
   uint ustack[2];
   
   ustack[0] = 0xffffffff;  // fake return PC
-  ustack[1] = arg;         // pointer to argument that is passed to function
+  ustack[1] = (uint)arg;         // pointer to argument that is passed to function
   sp -= 2*4;               // make room for ustack on the stack
 
-  if(copyout(nt->pgdir, sp, ustack, 2*4) < 0)
+  if(copyout(nt->pgdir, (uint)sp, ustack, 2*4) < 0)
     return -1;
 
-  nt->tf->eip = fnc;  // set entry point to function pointer
+  nt->tf->eip = (uint)fnc;  // set entry point to function pointer
   // Need to update the stack pointer to point to the top of the stack.
-  nt->tf->esp = sp;   // set user stack 
+  nt->tf->esp = (uint)sp;   // set user stack 
 
   acquire(&ptable.lock);
 
@@ -384,6 +384,23 @@ int clone(void* sp, int slindex, void (*fnc)(void*), void* arg){
   release(&ptable.lock);
 
   return nt->tid;
+}
+
+void clear_psl(struct proc* curproc){
+  // Free user stack memory and sltable entry
+  acquire(&sltable.lock);
+
+  curproc->psl->stackz[curproc->slindex] = 0;
+  // Clear page table entry for current threads user stack
+  // Note: Should replace STACKBOTTOM - 2*PGSIZE with
+  //       #define xxxxx
+  clearpteu(curproc->pgdir, (char*)(STACKBOTTOM - 2*PGSIZE - curproc->slindex*2*PGSIZE + PGSIZE));
+  curproc->slindex = 0;
+
+  if(curproc->psl->thread_count == 0)
+    curproc->psl->state = UNUSED;
+
+  release(&sltable.lock);
 }
 
 // Exit the current process.  Does not return.
@@ -416,7 +433,7 @@ exit(void)
     }
 
     if(curproc->psl != 0)
-      clear_psl(myproc);
+      clear_psl(curproc);
   }
   else
   {
@@ -432,7 +449,7 @@ exit(void)
     iput(curproc->cwd);
     end_op();
 
-    clear_psl(myproc);
+    clear_psl(curproc);
   }
   
 
@@ -454,23 +471,6 @@ exit(void)
   curproc->state = ZOMBIE;
   sched();
   panic("zombie exit");
-}
-
-void clear_psl(struct proc* curproc){
-  // Free user stack memory and sltable entry
-  acquire(&sltable.lock);
-
-  curproc->psl->stackz[curproc->slindex] = 0;
-  // Clear page table entry for current threads user stack
-  // Note: Should replace STACKBOTTOM - 2*PGSIZE with
-  //       #define xxxxx
-  clearpteu(curproc->pgdir, (char*)(STACKBOTTOM - 2*PGSIZE - curproc->slindex*2*PGSIZE + PGSIZE));
-  curproc->slindex = 0;
-
-  if(curproc->psl->thread_count == 0)
-    curproc->psl->state = UNUSED;
-
-  release(&sltable.lock);
 }
 
 // Wait for a child process to exit and return its pid.
