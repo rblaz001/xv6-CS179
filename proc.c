@@ -272,17 +272,21 @@ fork(void)
   return pid;
 }
 
-void KT_Create(void (*fnc)(void*), void* arg){
+int KT_Create(void (*fnc)(void*), void* arg){
+  
+  struct psl* sl;
+  int slindex = -1; // Expected to be update to available index value in psl otherwise remains -1
+
   // Check for if a null pointer is passed as a fnc
-  void *sp = NULL;
-  if (fnc == NULL)
-    return -1
+  void *sp = 0;
+  if (fnc == 0)
+    return -1;
 
   struct proc *curproc = myproc();
 
   acquire(&sltable.lock);
-  if (curproc->psl == NULL){
-    for(sl = sltable.proc; sl < &sltable.proc[NPROC]; sl++){
+  if (curproc->psl == 0){
+    for(sl = sltable.psl; sl < &sltable.psl[NPROC]; sl++){
       if (sl->state != UNUSED)
         continue;
       
@@ -290,37 +294,53 @@ void KT_Create(void (*fnc)(void*), void* arg){
       curproc->psl = sl;
       // Setting the first stack position to occupied in our psl's stackz
       sl->stackz[0] = 1;
+      curproc->slindex = 0;   // Initialize current thread stack list index 
+      sl->thread_count = 2;   // Initialize Thread Count
+      slindex = 1;            // Set stack list index for new stack to 1
 
     //allocate second thread's stack
-    if ((sp = allocuvm(pgdir, STACKBOTTOM - 4*PGSIZE, STACKBOTTOM - 2*PGSIZE)) == 0)
+    if ((sp = allocuvm(curproc->pgdir, STACKBOTTOM - 4*PGSIZE, STACKBOTTOM - 2*PGSIZE)) == 0)
       goto bad;
 
-    clearpteu(pgdir, (char*)(STACKBOTTOM - 4*PGSIZE)); // Clears 1 page table upward starting from pointer
+    clearpteu(curproc->pgdir, (char*)(STACKBOTTOM - 4*PGSIZE)); // Clears 1 page table upward starting from pointer
     sl->stackz[1] = 1;
     }
   }
   else{
+    if(curproc->psl->thread_count == 8){
+      release(&sltable.lock);
+      return -1;
+    }
+
+    // Increment Thread Count
+    curproc->psl->thread_count++;
+
+    // Allocating user stack
     for (int i = 0; i < 8; i++){
       if (curproc->psl->stackz[i] == 0){
-        if ((sp = allocuvm(pgdir, STACKBOTTOM - i*2*PGSIZE, STACKBOTTOM - (i*2*PGSIZE + 2*PGSIZE))) == 0)
+        if ((sp = allocuvm(curproc->pgdir, STACKBOTTOM - 2*PGSIZE - i*2*PGSIZE, STACKBOTTOM - i*2*PGSIZE)) == 0)
           goto bad;
-        clearpteu(pgdir, (char*)(STACKBOTTOM - i*2*PGSIZE)); // Clears 1 page table upward starting from pointer
-        curproc->psl->stackz[i] = 1;
+
+        clearpteu(curproc->pgdir, (char*)(STACKBOTTOM - 2*PGSIZE - i*2*PGSIZE)); // Clears 1 page table upward starting from pointer
+        curproc->psl->stackz[i] = 1;  // Mark first unused stack list entry to 1
+        slindex = i;
+
+        break;
       }
     } 
   }
+  release(&sltable.lock);
 
-  release(&sltable.lock)
-  clone(sp, 0, fnc, arg)
+  return clone(sp, slindex, fnc, arg);
   
   bad:
-    release(&sltable.lock)
+    release(&sltable.lock);
     if(curproc->pgdir)
-      freevm(curproc->pgdir)
+      freevm(curproc->pgdir);
 
 }
 
-int clone(void* sp, int size, void (*fnc)(void*), void* arg){
+int clone(void* sp, int slindex, void (*fnc)(void*), void* arg){
   struct proc* nt;
   struct proc* cur_thread = myproc();
 
@@ -328,12 +348,11 @@ int clone(void* sp, int size, void (*fnc)(void*), void* arg){
     return -1;
   }
 
-  nt->thread_count = -1;
   nt->pthread = cur_thread;
-
+  nt->slindex = slindex;
   nt->pgdir = cur_thread->pgdir;
   nt->sz = cur_thread->sz;
-  nt->tf = cur_thread->tf;
+  //nt->tf = cur_thread->tf;
 
   for(int i = 0; i < NOFILE; i++)
     nt->ofile[i] = cur_thread->ofile[i];
@@ -360,7 +379,6 @@ int clone(void* sp, int size, void (*fnc)(void*), void* arg){
 
   acquire(&ptable.lock);
 
-  cur_thread->thread_count++;
   nt->state = RUNNABLE;
 
   release(&ptable.lock);
@@ -381,18 +399,42 @@ exit(void)
   if(curproc == initproc)
     panic("init exiting");
 
-  // Close all open files.
-  for(fd = 0; fd < NOFILE; fd++){
-    if(curproc->ofile[fd]){
-      fileclose(curproc->ofile[fd]);
-      curproc->ofile[fd] = 0;
-    }
-  }
+  // Decrement Thread Counter
+  acquire(&sltable.lock);
+  curproc->psl->thread_count -= 1;
+  release(&sltable.lock);
 
-  begin_op();
-  iput(curproc->cwd);
-  end_op();
-  curproc->cwd = 0;
+  // Check if this is last thread to exit and clean up accordingly
+  // If last thread it will clear up the ofile and cwd resources and set them to 0
+  // Else it will set it's ofile and cwd pointers to 0
+  if(curproc->psl == 0 || curproc->psl->thread_count == 0){
+    for(fd = 0; fd < NOFILE; fd++){
+      if(curproc->ofile[fd]){
+        curproc->ofile[fd] = 0;
+      }
+      curproc->cwd = 0;
+    }
+
+    if(curproc->psl != 0)
+      clear_psl(myproc);
+  }
+  else
+  {
+    // Close all open files.
+    for(fd = 0; fd < NOFILE; fd++){
+      if(curproc->ofile[fd]){
+        fileclose(curproc->ofile[fd]);
+        curproc->ofile[fd] = 0;
+      }
+    }
+
+    begin_op();
+    iput(curproc->cwd);
+    end_op();
+
+    clear_psl(myproc);
+  }
+  
 
   acquire(&ptable.lock);
 
@@ -412,6 +454,23 @@ exit(void)
   curproc->state = ZOMBIE;
   sched();
   panic("zombie exit");
+}
+
+void clear_psl(struct proc* curproc){
+  // Free user stack memory and sltable entry
+  acquire(&sltable.lock);
+
+  curproc->psl->stackz[curproc->slindex] = 0;
+  // Clear page table entry for current threads user stack
+  // Note: Should replace STACKBOTTOM - 2*PGSIZE with
+  //       #define xxxxx
+  clearpteu(curproc->pgdir, (char*)(STACKBOTTOM - 2*PGSIZE - curproc->slindex*2*PGSIZE + PGSIZE));
+  curproc->slindex = 0;
+
+  if(curproc->psl->thread_count == 0)
+    curproc->psl->state = UNUSED;
+
+  release(&sltable.lock);
 }
 
 // Wait for a child process to exit and return its pid.

@@ -39,8 +39,8 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 // Where i is the index for stackz 
 // stackz[i] = 0 means unused stack, stackz[i] = 1 means stack is in use
 struct psl {
-  int pid;                     // Process ID
   int stackz[8];               // List of available stacks
+  int thread_count;            // Number of threads currently active
   enum procstate state;        // Used to find unused process stack list
                                // valid values are UNUSED or 1.
 };
@@ -61,10 +61,9 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging) 
   int tid;                     // Thread ID
-  int thread_count;            // Number of threads currently active
   struct proc *pthread;        // Parent thread
-  struct proc *rootp;          // root thread pointer
-  struct psl * psl;            // pointer to per-process list of stacks
+  struct psl *psl;             // Pointer to per-process list of stacks
+  int slindex;                 // Stack list index 
 };
 
 // Process memory is laid out contiguously, low addresses first:
