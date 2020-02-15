@@ -234,14 +234,18 @@ fork(void)
   int i, pid;
   struct proc *np;
   struct proc *curproc = myproc();
+  int slindex = 0;
 
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
   }
 
+  if(curproc->psl != 0)
+    slindex = curproc->slindex;
+
   // Copy process state from proc.
-  if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
+  if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz, slindex)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
     np->state = UNUSED;
