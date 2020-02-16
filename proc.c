@@ -362,8 +362,8 @@ int clone(void* sp, int slindex, void (*fnc)(void*), void* arg){
   *nt->tf = *cur_thread->tf;
 
   for(int i = 0; i < NOFILE; i++)
-    nt->ofile[i] = cur_thread->ofile[i];
-  nt->cwd = cur_thread->cwd;
+    nt->ofile[i] = filedup(cur_thread->ofile[i]);
+  nt->cwd = idup(cur_thread->cwd);
 
   safestrcpy(nt->name, cur_thread->name, sizeof(cur_thread->name));
 
@@ -405,6 +405,8 @@ void clear_psl(struct proc* curproc){
                               (STACKBOTTOM - 2*PGSIZE - curproc->slindex*2*PGSIZE));
   curproc->slindex = 0;
 
+  curproc->psl->thread_count -= 1;
+
   if(curproc->psl->thread_count == 0)
     curproc->psl->state = UNUSED;
 
@@ -424,42 +426,22 @@ exit(void)
   if(curproc == initproc)
     panic("init exiting");
 
-  // Decrement Thread Counter
-  acquire(&sltable.lock);
-  curproc->psl->thread_count -= 1;
-  release(&sltable.lock);
-
-  // Check if this is last thread to exit and clean up accordingly
-  // If last thread it will clear up the ofile and cwd resources and set them to 0
-  // Else it will set it's ofile and cwd pointers to 0
-  if(curproc->psl == 0 || curproc->psl->thread_count == 0){
-    for(fd = 0; fd < NOFILE; fd++){
-      if(curproc->ofile[fd]){
-        curproc->ofile[fd] = 0;
-      }
-      curproc->cwd = 0;
+  // Close all open files.
+  // Will only close files if it is the last reference to it
+  for(fd = 0; fd < NOFILE; fd++){
+    if(curproc->ofile[fd]){
+      fileclose(curproc->ofile[fd]);
+      curproc->ofile[fd] = 0;
     }
-
-    if(curproc->psl != 0)
-      clear_psl(curproc);
   }
-  else
-  {
-    // Close all open files.
-    for(fd = 0; fd < NOFILE; fd++){
-      if(curproc->ofile[fd]){
-        fileclose(curproc->ofile[fd]);
-        curproc->ofile[fd] = 0;
-      }
-    }
 
-    begin_op();
-    iput(curproc->cwd);
-    end_op();
+  begin_op();
+  iput(curproc->cwd);
+  end_op();
+  curproc->cwd = 0;
 
+  if(curproc->psl != 0)
     clear_psl(curproc);
-  }
-  
 
   acquire(&ptable.lock);
 
