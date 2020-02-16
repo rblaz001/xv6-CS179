@@ -31,13 +31,13 @@ int
 fetchstr(uint addr, char **pp)
 {
   char *s, *ep;
-  struct proc *curproc = myproc();
+  //struct proc *curproc = myproc();
 
   // Make sure addr does not enter kernal address space
   if(addr >= KERNBASE)
     return -1;
   *pp = (char*)addr;
-  ep = (char*)curproc->sz;
+  ep = (char*)KERNBASE;
   for(s = *pp; s < ep; s++){
     if(*s == 0)
       return s - *pp;
