@@ -18,7 +18,7 @@ int
 fetchint(uint addr, int *ip)
 {
   // Make sure addr does not enter kernal address space
-  if(addr >= STACKBOTTOM || addr+4 > STACKBOTTOM)
+  if(addr >= KERNBASE || addr+4 > KERNBASE)
     return -1;
   *ip = *(int*)(addr);
   return 0;
@@ -34,7 +34,7 @@ fetchstr(uint addr, char **pp)
   struct proc *curproc = myproc();
 
   // Make sure addr does not enter kernal address space
-  if(addr >= STACKBOTTOM)
+  if(addr >= KERNBASE)
     return -1;
   *pp = (char*)addr;
   ep = (char*)curproc->sz;
@@ -63,7 +63,7 @@ argptr(int n, char **pp, int size)
   if(argint(n, &i) < 0)
     return -1;
   // Make sure i or i+size does not enter kernal address space
-  if(size < 0 || (uint)i >= STACKBOTTOM || (uint)i+size > STACKBOTTOM)
+  if(size < 0 || (uint)i >= KERNBASE || (uint)i+size > KERNBASE)
     return -1;
   *pp = (char*)i;
   return 0;
