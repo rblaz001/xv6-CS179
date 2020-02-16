@@ -257,8 +257,8 @@ fork(void)
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
-  // // Offset stack pointer for new process based off of old process stack location
-  // np->tf->esp += slindex*2*PGSIZE;
+  // Offset stack pointer for new process based off of old process stack location
+  np->tf->esp += slindex*2*PGSIZE;
 
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
