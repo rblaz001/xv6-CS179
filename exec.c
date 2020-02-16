@@ -66,7 +66,7 @@ exec(char *path, char **argv)
   if((sp = allocuvm(pgdir, STACKBOTTOM - 2*PGSIZE, STACKBOTTOM)) == 0)
     goto bad;
   // Clear the first page table allocated and make inaccessible
-  clearpteu(pgdir, (char*)(STACKBOTTOM - 2*PGSIZE)); // Clears 1 page table upward starting from pointer
+  clearpteu(pgdir, (char*)(sp - 2*PGSIZE)); // Clears 1 page table upward starting from pointer
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {

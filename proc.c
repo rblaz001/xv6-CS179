@@ -308,8 +308,9 @@ int KT_Create(void (*fnc)(void*), void* arg){
     if ((sp = (void*)allocuvm(curproc->pgdir, STACKBOTTOM - 4*PGSIZE, STACKBOTTOM - 2*PGSIZE)) == 0)
       goto bad;
 
-    clearpteu(curproc->pgdir, (char*)(STACKBOTTOM - 4*PGSIZE)); // Clears 1 page table upward starting from pointer
+    clearpteu(curproc->pgdir, (char*)(sp - 4*PGSIZE)); // Clears 1 page table upward starting from pointer
     sl->stackz[1] = 1;
+    break;
     }
   }
   else{
@@ -327,7 +328,7 @@ int KT_Create(void (*fnc)(void*), void* arg){
         if ((sp = (void*)allocuvm(curproc->pgdir, STACKBOTTOM - 2*PGSIZE - i*2*PGSIZE, STACKBOTTOM - i*2*PGSIZE)) == 0)
           goto bad;
 
-        clearpteu(curproc->pgdir, (char*)(STACKBOTTOM - 2*PGSIZE - i*2*PGSIZE)); // Clears 1 page table upward starting from pointer
+        clearpteu(curproc->pgdir, (char*)(sp - 2*PGSIZE)); // Clears 1 page table upward starting from pointer
         curproc->psl->stackz[i] = 1;  // Mark first unused stack list entry to 1
         slindex = i;
 
@@ -358,6 +359,7 @@ int clone(void* sp, int slindex, void (*fnc)(void*), void* arg){
   nt->slindex = slindex;
   nt->pgdir = cur_thread->pgdir;
   nt->sz = cur_thread->sz;
+  *nt->tf = *cur_thread->tf;
 
   for(int i = 0; i < NOFILE; i++)
     nt->ofile[i] = cur_thread->ofile[i];
@@ -399,7 +401,8 @@ void clear_psl(struct proc* curproc){
   // Clear page table entry for current threads user stack
   // Note: Should replace STACKBOTTOM - 2*PGSIZE with
   //       #define xxxxx
-  clearpteu(curproc->pgdir, (char*)(STACKBOTTOM - 2*PGSIZE - curproc->slindex*2*PGSIZE + PGSIZE));
+  deallocuvm(curproc->pgdir, (STACKBOTTOM - curproc->slindex*2*PGSIZE), 
+                              (STACKBOTTOM - 2*PGSIZE - curproc->slindex*2*PGSIZE));
   curproc->slindex = 0;
 
   if(curproc->psl->thread_count == 0)
