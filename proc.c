@@ -361,8 +361,10 @@ int clone(void* sp, int slindex, void (*fnc)(void*), void* arg){
   nt->sz = cur_thread->sz;
   *nt->tf = *cur_thread->tf;
 
-  for(int i = 0; i < NOFILE; i++)
-    nt->ofile[i] = filedup(cur_thread->ofile[i]);
+  for(int i = 0; i < NOFILE; i++){
+    if(cur_thread->ofile[i])
+      nt->ofile[i] = filedup(cur_thread->ofile[i]);
+  }
   nt->cwd = idup(cur_thread->cwd);
 
   safestrcpy(nt->name, cur_thread->name, sizeof(cur_thread->name));
