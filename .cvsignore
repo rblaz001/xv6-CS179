@@ -6,6 +6,7 @@ kernel
 user1
 userfs
 usertests
+kernelthreadtests
 xv6.img
 vectors.S
 bochsout.txt
