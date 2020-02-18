@@ -20,9 +20,10 @@ void test_fnc(void* arg){
   exit();
 }
 
-void open_and_write_to_file(){
+void open_and_write_to_file(int* arg){
     curr_fd = open("small", O_CREATE|O_RDWR);
     printf(stdout, "curr_fd after open file: %d \n", curr_fd);
+    printf(stdout, "ARG VALUE: %d \n", *arg);
     
     int i;
     for(i = 0; i < 100; i++){
@@ -35,6 +36,10 @@ void open_and_write_to_file(){
       exit();
     }
   }
+  printf(stdout, "AFTER WRITE \n");
+  *arg = 0;
+  printf(stdout, "NEW ARG VALUE: %d \n", *arg);
+  exit();
 }
 
 int read_open_file(void* arg){
@@ -52,14 +57,20 @@ int read_open_file(void* arg){
   exit();
 }
 
+int dummy_fnc(int * x){
+  return 1;
+}
 
 void files_remain_open_test()
 {
   printf(stdout, "in files_remain_open_test\n");
 
-  open_and_write_to_file();
+  int var = 100;
+  int * x = &var;
 
-  // KT_Create((void*)&open_and_write_to_file, (void*)0);
+  KT_Create((void*)&open_and_write_to_file, x);
+  printf(stdout, "x VALUE: %d \n", *x);
+  while (*x == 100 && dummy_fnc(x) == 1){}
   KT_Create((void*)&read_open_file, (void*)0);
 }
 
@@ -85,7 +96,7 @@ main(int argc, char *argv[])
 {
   printf(1, "testing kernel level threads!\n");
 
-  create_n_threads(4);
+  // create_n_threads(4);
   files_remain_open_test();
 
   printf(1, "ALL TESTS PASSED");
