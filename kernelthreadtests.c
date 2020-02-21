@@ -20,41 +20,32 @@ void test_fnc(void* arg){
   exit();
 }
 
-void open_and_write_to_file(int* arg){
-    curr_fd = open("small", O_CREATE|O_RDWR);
-    printf(stdout, "curr_fd after open file: %d \n", curr_fd);
-    printf(stdout, "ARG VALUE: %d \n", *arg);
-    
-    int i;
-    for(i = 0; i < 100; i++){
-    if(write(curr_fd, "aaaaaaaaaa", 10) != 10){
-      printf(stdout, "error: write aa %d new file failed\n", i);
-      exit();
-    }
-    if(write(curr_fd, "bbbbbbbbbb", 10) != 10){
-      printf(stdout, "error: write bb %d new file failed\n", i);
-      exit();
-    }
-  }
-  printf(stdout, "AFTER WRITE \n");
-  *arg = 0;
-  printf(stdout, "NEW ARG VALUE: %d \n", *arg);
-  exit();
-}
-
-int read_open_file(void* arg){
-  int i = read(curr_fd, buf, 900);
+int read_open_file(int* arg){
+  while((int volatile)*arg == 100){}
+  open("small", O_RDWR);
+  int i = read(curr_fd, buf, 11);
 
   printf(stdout, "i after read file: %d \n", i);
 
-  if(i == 900){
-    printf(stdout, "read succeeded ok\n");
+  if(i == 11){
+    printf(stdout, "read succeeded ok: \n", buf);
   } else {
     printf(stdout, "read failed\n");
     exit();
   }
-
   exit();
+}
+
+void open_and_write_to_file(){
+    curr_fd = open("small", O_CREATE|O_RDWR);
+    printf(stdout, "curr_fd after open file: %d \n", curr_fd);
+    printf(stdout, "ARG VALUE: %d \n", 0);
+    
+    if(write(curr_fd, "aaaaaaaaaa", 11) != 11){
+      printf(stdout, "error: write aa new file failed\n");
+      exit();
+    }
+  printf(stdout, "AFTER WRITE \n");
 }
 
 int dummy_fnc(int * x){
@@ -65,13 +56,15 @@ void files_remain_open_test()
 {
   printf(stdout, "in files_remain_open_test\n");
 
-  int var = 100;
-  int * x = &var;
+  int volatile var = 100;
+  int volatile * x = &var;
 
-  KT_Create((void*)&open_and_write_to_file, x);
+  open_and_write_to_file();
+
+  KT_Create((void*)&read_open_file, (void* )x);
+  close(curr_fd);
+  *x = 0;
   printf(stdout, "x VALUE: %d \n", *x);
-  while (*x == 100 && dummy_fnc(x) == 1){}
-  KT_Create((void*)&read_open_file, (void*)0);
 }
 
 void create_n_threads(int num_threads)
@@ -99,6 +92,6 @@ main(int argc, char *argv[])
   // create_n_threads(4);
   files_remain_open_test();
 
-  printf(1, "ALL TESTS PASSED");
+  // printf(1, "ALL TESTS PASSED");
   exit();
 }

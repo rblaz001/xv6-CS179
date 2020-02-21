@@ -1,0 +1,11 @@
+language: c
+os: linux
+services:
+  -docker
+before_install:
+  - docker build -t xv6 .
+script:
+  - make qemu-nox
+  - usertests
+  - kernelthreadtests
+  - (timeout 600 bash -c "echo ' ls' | make qemu-nox"; exit 0)
