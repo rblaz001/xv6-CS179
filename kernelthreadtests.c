@@ -8,7 +8,7 @@
 #include "traps.h"
 #include "memlayout.h"
 
-char buf[8192];
+char buf[21];
 char name[3];
 char *echoargv[] = { "echo", "ALL", "TESTS", "PASSED", 0 };
 int stdout = 1;
@@ -21,9 +21,9 @@ void test_fnc(void* arg){
 }
 
 int read_open_file(int* arg){
-  while((int volatile)*arg == 100){}
-  open("small", O_RDWR);
-  int i = read(curr_fd, buf, 11);
+  while((int volatile)*arg != 1){}
+  open("small", 0);
+  int i = read(curr_fd, buf, 21);
 
   printf(stdout, "i after read file: %d \n", i);
 
@@ -36,7 +36,7 @@ int read_open_file(int* arg){
   exit();
 }
 
-void open_and_write_to_file(){
+void open_and_write_to_file(int* arg){
     curr_fd = open("small", O_CREATE|O_RDWR);
     printf(stdout, "curr_fd after open file: %d \n", curr_fd);
     printf(stdout, "ARG VALUE: %d \n", 0);
@@ -45,7 +45,20 @@ void open_and_write_to_file(){
       printf(stdout, "error: write aa new file failed\n");
       exit();
     }
+  printf(stdout, "AFTER OPEN_WRITE \n");
+  *arg += 1;
+}
+
+void write_to_file(int* arg)
+{
+  printf(stdout, "curr_fd after open file: %d \n", curr_fd);
+  if(write(curr_fd, "bbbbbbbbbb", 11) != 11){
+      printf(stdout, "error: write aa new file failed\n");
+      exit();
+    }
   printf(stdout, "AFTER WRITE \n");
+  *arg += 1;
+  exit();
 }
 
 int dummy_fnc(int * x){
@@ -56,14 +69,13 @@ void files_remain_open_test()
 {
   printf(stdout, "in files_remain_open_test\n");
 
-  int volatile var = 100;
+  int volatile var = 0;
   int volatile * x = &var;
 
-  open_and_write_to_file();
+  open_and_write_to_file((void* )x);
 
+  // KT_Create((void*)&write_to_file, (void* )x);
   KT_Create((void*)&read_open_file, (void* )x);
-  close(curr_fd);
-  *x = 0;
   printf(stdout, "x VALUE: %d \n", *x);
 }
 
@@ -92,6 +104,6 @@ main(int argc, char *argv[])
   // create_n_threads(4);
   files_remain_open_test();
 
-  // printf(1, "ALL TESTS PASSED");
+  printf(1, "ALL TESTS PASSED");
   exit();
 }
