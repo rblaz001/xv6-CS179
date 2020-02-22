@@ -5,6 +5,7 @@ services:
 before_install:
   - docker build -t xv6 .
 script:
+  - docker run -it xv6
   - make qemu-nox
   - usertests
   - kernelthreadtests
