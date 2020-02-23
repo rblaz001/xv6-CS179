@@ -14,4 +14,5 @@ struct semaphore {
     struct spinlock lock;
     struct queue queue;
     int count;
+    enum proc state;
 };

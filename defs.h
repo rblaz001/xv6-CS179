@@ -123,6 +123,11 @@ void            wakeup(void*);
 void            yield(void);
 int             KT_Create(void (*fnc)(void*), void* arg);
 int             clone(void*, int, void (*fnc)(void*), void*);
+// proc.c semaphores
+void            sem_signal(struct semaphore*);
+void            sem_wait(struct semaphore*);
+void            sem_init(struct semaphore*);
+void            sem_free(struct semaphore*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
@@ -188,11 +193,6 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
-
-// semaphore.c
-void            sem_signal(struct semaphore*);
-void            sem_wait(struct semaphore*);
-void            sem_init(struct semaphore*);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

@@ -32,7 +32,7 @@ struct context {
   uint eip;
 };
 
-enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE, SEM_SLEEPING };
 
 // Per-Process list of available user stacks - process stack list
 // Used to allocate user stack space based on a i*2 PAGESIZE offset
