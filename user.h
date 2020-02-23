@@ -24,6 +24,10 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int KT_Create(void(*fnc)(void*), void* arg);
+int sem_init(void);
+int sem_wait(int);
+int sem_signal(int);
+void sem_free(int);
 
 // ulib.c
 int stat(const char*, struct stat*);

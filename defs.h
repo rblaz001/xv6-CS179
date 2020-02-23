@@ -10,6 +10,7 @@ struct sleeplock;
 struct stat;
 struct superblock;
 struct semaphore;
+struct queue;
 
 // bio.c
 void            binit(void);
@@ -124,10 +125,17 @@ void            yield(void);
 int             KT_Create(void (*fnc)(void*), void* arg);
 int             clone(void*, int, void (*fnc)(void*), void*);
 // proc.c semaphores
-void            sem_signal(struct semaphore*);
-void            sem_wait(struct semaphore*);
+int             sem_initialize(void);
+int             sem_signal(int);
+int             sem_wait(int);
 void            sem_init(struct semaphore*);
-void            sem_free(struct semaphore*);
+void            sem_free(int);
+void            sem_sleep(struct semaphore*);
+void            sem_wakeup(struct semaphore*);
+int             isEmpty(struct queue*);
+int             isFull(struct queue*);
+void            push_back(struct queue*, struct proc*);
+struct proc*    pop_front(struct queue*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

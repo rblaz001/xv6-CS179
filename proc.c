@@ -52,6 +52,7 @@ pinit(void)
 {
   initlock(&ptable.lock, "ptable");
   initlock(&sltable.lock, "sltable");   // Initialize lock for sltable
+  initlock(&semtable.lock, "semtable");
 }
 
 // Must be called with interrupts disabled
@@ -299,7 +300,9 @@ fork(void)
   return pid;
 }
 
-int KT_Create(void (*fnc)(void*), void* arg){
+int 
+KT_Create(void (*fnc)(void*), void* arg)
+{
   
   struct psl* sl;
   int slindex = -1; // Expected to be update to available index value in psl otherwise remains -1
@@ -368,7 +371,9 @@ int KT_Create(void (*fnc)(void*), void* arg){
     return -1;
 }
 
-int clone(void* sp, int slindex, void (*fnc)(void*), void* arg){
+int 
+clone(void* sp, int slindex, void (*fnc)(void*), void* arg)
+{
   struct proc* nt;
   struct proc* cur_thread = myproc();
 
@@ -416,7 +421,9 @@ int clone(void* sp, int slindex, void (*fnc)(void*), void* arg){
   return nt->tid;
 }
 
-void clear_psl(struct proc* curproc){
+void 
+clear_psl(struct proc* curproc)
+{
   // Free user stack memory and sltable entry
   acquire(&sltable.lock);
 
@@ -757,45 +764,85 @@ procdump(void)
   }
 }
 
+int
+sem_initialize()
+{
+  acquire(&semtable.lock);
+  for(int i = 0; i < NPROC; i++){
+    if (semtable.sem[i].state != UNUSED)
+      continue;
+
+    sem_init(&semtable.sem[i]);
+    return i;
+  }
+
+  // No free semaphores
+  return -1;
+}
+
   //----------------------------------------------------------
 
-  void sem_signal(struct semaphore* s) {
-    acquire(&s->lock);
-    if(s->count <= 0)
-        sem_sleep(s);
-    s->count--;
-    release(&s->lock);
+int 
+sem_signal(int index) 
+{
+  struct semaphore* s = &semtable.sem[index];
+
+  if(s->state == UNUSED)
+    return -1;
+
+  acquire(&s->lock);
+  if(s->count <= 0)
+      sem_sleep(s);
+  s->count--;
+  release(&s->lock);
+  return 0;
 }
 
-void sem_wait(struct semaphore* s) {
-    acquire(&s->lock);
-    s->count++;
-    sem_wakeup(s);
-    release(&s->lock);
+int 
+sem_wait(int index) 
+{
+  struct semaphore* s = &semtable.sem[index];
+
+  if(s->state == UNUSED)
+    return -1;
+
+  acquire(&s->lock);
+  s->count++;
+  sem_wakeup(s);
+  release(&s->lock);
+  return 0;
 }
 
-void sem_init(struct semaphore* s) {
-    initlock(&s->lock, "semaphore lock");
-    s->queue.count = 0;
-    s->queue.front = 0;
-    s->queue.back = -1;
-    s->state = 1;
-    for(int i = 0; i < MAXQ; i++){
-        s->queue.q[i] = 0;
-    }
+void 
+sem_init(struct semaphore* s) 
+{
+  initlock(&s->lock, "semaphore lock");
+  s->queue.count = 0;
+  s->queue.front = 0;
+  s->queue.back = -1;
+  s->state = 1;
+  for(int i = 0; i < MAXQ; i++){
+    s->queue.q[i] = 0;
+  }
 }
 
-void sem_free(struct semaphore* s) {
+void 
+sem_free(int index) 
+{
+  struct semaphore* s = &semtable.sem[index];
+
     acquire(&s->lock);
     s->state = UNUSED;
     release(&s->lock);
 }
 
-void sem_sleep(struct semaphore* s){
-    struct proc *p = myproc();
+void 
+sem_sleep(struct semaphore* s)
+{
+  struct proc *p = myproc();
   
-    if(p == 0)
-        panic("sem_sleep");
+  if(p == 0)
+    panic("sem_sleep");
 
     acquire(&ptable.lock);  //DOC: sleeplock1
     release(&s->lock);
@@ -811,55 +858,65 @@ void sem_sleep(struct semaphore* s){
     acquire(&s->lock);
 }
 
-void sem_wakeup(struct semaphore* s){
-    struct proc* p;
-    
-    acquire(&ptable.lock);
-    p = pop_front(&s->queue);
-    if(p){
-        p->state = RUNNABLE;
-    }
-    release(&ptable.lock);
+void 
+sem_wakeup(struct semaphore* s)
+{
+  struct proc* p;
+  
+  acquire(&ptable.lock);
+  p = pop_front(&s->queue);
+  if(p){
+    p->state = RUNNABLE;
+  }
+  release(&ptable.lock);
 }
 
 // https://www.tutorialspoint.com/data_structures_algorithms/queue_program_in_c.htm
 // Used this resource to help implement queue in c
 
-int isEmpty(struct queue* que) {
-    if(que->count == 0)
-        return 1;
-    else
-        return 0;
+int 
+isEmpty(struct queue* que) 
+{
+  if(que->count == 0)
+    return 1;
+  else
+    return 0;
 }
 
-int isFull(struct queue* que) {
-    if(que->count == MAXQ)
-        return 1;
-    else
-        return 0;
+int 
+isFull(struct queue* que) 
+{
+  if(que->count == MAXQ)
+    return 1;
+  else
+    return 0;
 }
 
-void push_back(struct queue* que, struct proc* p) {
-    if(!isFull(que)){
-        
-        if(que->back == MAXQ-1){
-            que->back = -1;
-        }
-
-        que->q[++que->back] = p;
-        que->count++;
+void 
+push_back(struct queue* que, struct proc* p) 
+{
+  if(!isFull(que)){
+      
+    if(que->back == MAXQ-1){
+      que->back = -1;
     }
+
+    que->q[++que->back] = p;
+    que->count++;
+  }
 }
 
-struct proc* pop_front(struct queue* que) {
-    if(isEmpty(que))
-        return 0;
-    struct proc* p = que->q[que->front++];
-  
-    if(que->front == MAXQ) {
-      que->front = 0;
-    }
-  
-    que->count--;
-    return p;
+struct 
+proc* pop_front(struct queue* que) 
+{
+  if(isEmpty(que))
+    return 0;
+  struct proc* p = que->q[que->front++];
+
+  if(que->front == MAXQ) {
+    que->front = 0;
+  }
+
+  que->count--;
+  return p;
 }

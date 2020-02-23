@@ -102,3 +102,52 @@ sys_kt_create(void)
 
   return KT_Create((void*)fnc, arg);
 }
+
+int
+sys_sem_init(void)
+{
+  return sem_initialize();
+}
+
+int
+sys_sem_wait(void)
+{
+  int index;
+
+  if(argint(0, &index) < 0)
+    return -1;
+
+  if(index < 0 || index > NPROC)
+    return -1;
+  
+  return sem_wait(index);
+}
+
+int
+sys_sem_signal(void)
+{
+  int index;
+
+  if(argint(0, &index) < 0)
+    return -1;
+
+  if(index < 0 || index > NPROC)
+    return -1;
+  
+  return sem_signal(index);
+}
+
+int
+sys_sem_free(void)
+{
+  int index;
+
+  if(argint(0, &index) < 0)
+    return -1;
+
+  if(index < 0 || index > NPROC)
+    return -1;
+  
+  sem_free(index);
+  return 0;
+}
