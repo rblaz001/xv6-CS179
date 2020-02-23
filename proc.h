@@ -1,5 +1,3 @@
-#define MAXQ 7
-
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -73,17 +71,3 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
-
-struct queue {
-    struct proc* q[MAXQ];
-    int front;
-    int back;
-    int count;
-};
- 
-struct semaphore {
-    struct spinlock lock;
-    struct queue queue;
-    int count;
-    enum procstate state;
-};

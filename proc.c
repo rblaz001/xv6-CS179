@@ -8,6 +8,20 @@
 #include "spinlock.h"
 // #include "semaphore.h"
 
+struct queue {
+    struct proc* q[MAXQ];
+    int front;
+    int back;
+    int count;
+};
+ 
+struct semaphore {
+    struct spinlock lock;
+    struct queue queue;
+    int count;
+    enum procstate state;
+};
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];   // 8 threads possible per process
