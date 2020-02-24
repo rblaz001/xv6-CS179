@@ -106,7 +106,15 @@ sys_kt_create(void)
 int
 sys_sem_init(void)
 {
-  return sem_initialize();
+  int initCount;
+
+  if(argint(0, &initCount) < 0)
+    return -1;
+
+  if(initCount <= 0 && initCount >= 6)
+    return -1;
+
+  return sem_initialize(initCount);
 }
 
 int
@@ -117,7 +125,7 @@ sys_sem_wait(void)
   if(argint(0, &index) < 0)
     return -1;
 
-  if(index < 0 || index > NPROC)
+  if(index < 0 || index >= NPROC)
     return -1;
   
   return sem_wait(index);

@@ -96,13 +96,55 @@ void create_n_threads(int num_threads)
   }
 }
 
+void criticalFuction(int* sem)
+{
+  if(sem_wait(*sem) == -1)
+  {
+    printf(stdout, "panic\n");
+    exit(); 
+  } 
+  for(int i = 1; i <= 1000000; i++)
+  {
+    if(i % 10000 == 0)
+      printf(stdout, "%d\n", i/100);
+
+    if(i == 1000000)
+      printf(stdout, "Finished\n");
+  }
+  sem_signal(*sem);
+
+  exit();
+}
+
+void semaphoreTest()
+{
+  int sem = sem_init(1);
+
+  if(sem == -1)
+  {
+    printf(stdout, "PANIC\n");
+  }
+  else
+  {
+    printf(stdout, "Semaphore Init\n");
+  }
+  
+  for(int i = 0; i < 4; i++)
+  {
+    KT_Create((void*)&criticalFuction, (void*)&sem);
+  }
+
+  criticalFuction(&sem);
+}
+
 int
 main(int argc, char *argv[])
 {
   printf(1, "testing kernel level threads!\n");
 
   // create_n_threads(4);
-  files_remain_open_test();
+  // files_remain_open_test();
+  semaphoreTest();
 
   printf(1, "ALL TESTS PASSED");
   exit();

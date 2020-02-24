@@ -125,10 +125,10 @@ void            yield(void);
 int             KT_Create(void (*fnc)(void*), void* arg);
 int             clone(void*, int, void (*fnc)(void*), void*);
 // proc.c semaphores
-int             sem_initialize(void);
+int             sem_initialize(int);
 int             sem_signal(int);
 int             sem_wait(int);
-void            sem_init(struct semaphore*);
+void            sem_init(struct semaphore*, int);
 void            sem_free(int);
 void            sem_sleep(struct semaphore*);
 void            sem_wakeup(struct semaphore*);

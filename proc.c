@@ -765,17 +765,19 @@ procdump(void)
 }
 
 int
-sem_initialize()
+sem_initialize(int initCount)
 {
   acquire(&semtable.lock);
   for(int i = 0; i < NPROC; i++){
     if (semtable.sem[i].state != UNUSED)
       continue;
 
-    sem_init(&semtable.sem[i]);
+    sem_init(&semtable.sem[i], initCount);
+    release(&semtable.lock);
     return i;
   }
 
+  release(&semtable.lock);
   // No free semaphores
   return -1;
 }
@@ -809,17 +811,24 @@ sem_wait(int index)
 
   acquire(&s->lock);
   if(s->count <= 0)
+  {
+    s->count--;
     sem_sleep(s);
-  s->count--;
+  }
+  else
+  {
+    s->count--;
+  }
   release(&s->lock);
 
   return 0;
 }
 
 void 
-sem_init(struct semaphore* s) 
+sem_init(struct semaphore* s, int initCount) 
 {
   initlock(&s->lock, "semaphore lock");
+  s->count = initCount;
   s->queue.count = 0;
   s->queue.front = 0;
   s->queue.back = -1;
@@ -847,18 +856,19 @@ sem_sleep(struct semaphore* s)
   if(p == 0)
     panic("sem_sleep");
 
-    acquire(&ptable.lock);  //DOC: sleeplock1
-    release(&s->lock);
+  acquire(&ptable.lock);  //DOC: sleeplock1
 
-    // Go to sleep.
-    push_back(&s->queue, p);
-    p->state = SEM_SLEEPING;
+  // Go to sleep.
+  push_back(&s->queue, p);
+  release(&s->lock);
 
-    sched();
+  p->state = SEM_SLEEPING;
 
-    // Reacquire semaphore lock.
-    release(&ptable.lock);
-    acquire(&s->lock);
+  sched();
+
+  // Reacquire semaphore lock.
+  release(&ptable.lock);
+  acquire(&s->lock);
 }
 
 void 
