@@ -791,9 +791,10 @@ sem_signal(int index)
     return -1;
 
   acquire(&s->lock);
-  if(s->count <= 0)
-      sem_sleep(s);
-  s->count--;
+  
+  s->count++;
+  sem_wakeup(s);
+
   release(&s->lock);
   return 0;
 }
@@ -807,9 +808,11 @@ sem_wait(int index)
     return -1;
 
   acquire(&s->lock);
-  s->count++;
-  sem_wakeup(s);
+  if(s->count <= 0)
+    sem_sleep(s);
+  s->count--;
   release(&s->lock);
+
   return 0;
 }
 
