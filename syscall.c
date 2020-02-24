@@ -104,7 +104,8 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_kt_create(void);
-extern int sys_sem_init(void);
+extern int sys_kt_join(void);
+extern int sys_sem_initialize(void);
 extern int sys_sem_wait(void);
 extern int sys_sem_signal(void);
 extern int sys_sem_free(void);
@@ -133,7 +134,8 @@ static int (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_KT_Create] sys_kt_create,
-[SYS_sem_init]    sys_sem_init,
+[SYS_KT_Join] sys_kt_join,
+[SYS_sem_initialize]    sys_sem_initialize,
 [SYS_sem_wait]    sys_sem_wait,
 [SYS_sem_signal]  sys_sem_signal,
 [SYS_sem_free]    sys_sem_free,  

@@ -933,3 +933,22 @@ proc* pop_front(struct queue* que)
   que->count--;
   return p;
 }
+
+int
+KT_Join(int thread_id)
+{
+  acquire(&ptable.lock);
+  struct proc *t;
+  for (t = ptable.proc; t < &ptable.proc[NPROC] && t->tid != thread_id; t++){}
+
+  if(t->state == UNUSED)
+    return -1;
+
+  while(t->state != ZOMBIE){
+    sleep(t, &ptable.lock);  //DOC: wait-sleep
+  }
+
+  release(&ptable.lock);
+
+  return 0;
+}
