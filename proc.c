@@ -382,6 +382,7 @@ clone(void* sp, int slindex, void (*fnc)(void*), void* arg)
   }
 
   nt->pthread = cur_thread;
+  nt->psl = cur_thread->psl;
   nt->slindex = slindex;
   nt->pgdir = cur_thread->pgdir;
   nt->sz = cur_thread->sz;
