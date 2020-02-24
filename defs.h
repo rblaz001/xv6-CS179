@@ -124,7 +124,7 @@ void            wakeup(void*);
 void            yield(void);
 int             KT_Create(void (*fnc)(void*), void* arg);
 int             clone(void*, int, void (*fnc)(void*), void*);
-int             KT_Join(int);
+int             KT_Join(void);
 // proc.c semaphores
 int             sem_initialize(int);
 int             sem_signal(int);

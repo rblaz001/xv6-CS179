@@ -470,13 +470,16 @@ exit(void)
   end_op();
   curproc->cwd = 0;
 
-  if(curproc->psl != 0)
-    clear_psl(curproc);
-
   acquire(&ptable.lock);
 
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
+  
+  if(curproc->psl != 0)
+  {
+    // Parent thread might be sleeping in KT_join().
+    wakeup1(curproc->psl);
+  }
 
   // Pass abandoned children to init.
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -517,6 +520,8 @@ wait(void)
         p->kstack = 0;
         if(p->psl == 0 || p->psl->thread_count == 0)
           freevm(p->pgdir);
+        if(p->psl != 0)
+          clear_psl(p);
         p->pid = 0;
         p->parent = 0;
         p->name[0] = 0;
@@ -935,20 +940,50 @@ proc* pop_front(struct queue* que)
 }
 
 int
-KT_Join(int thread_id)
+KT_Join(void)
 {
+  struct proc *p;
+  int havekids, tid;
+  struct proc *curproc = myproc();
+  
   acquire(&ptable.lock);
-  struct proc *t;
-  for (t = ptable.proc; t < &ptable.proc[NPROC] && t->tid != thread_id; t++){}
+  for(;;){
+    // Scan through table looking for exited children.
+    havekids = 0;
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->pthread != curproc)
+        continue;
+      havekids = 1;
+      if(p->state == ZOMBIE){
+        // Found one.
+        tid = p->tid;
+        kfree(p->kstack);
+        p->kstack = 0;
+        if(p->psl == 0 || p->psl->thread_count == 0)
+          freevm(p->pgdir);
+        if(p->psl != 0)
+          clear_psl(p);
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        p->tid = 0;
+        p->pthread = 0;
+        p->psl = 0;
+        p->slindex = 0;
+        p->state = UNUSED;
+        release(&ptable.lock);
+        return tid;
+      }
+    }
 
-  if(t->state == UNUSED)
-    return -1;
+    // No point waiting if we don't have any children.
+    if(!havekids || curproc->killed){
+      release(&ptable.lock);
+      return -1;
+    }
 
-  while(t->state != ZOMBIE){
-    sleep(t, &ptable.lock);  //DOC: wait-sleep
+    // Wait for children to exit.  (See wakeup1 call in proc_exit.)
+    sleep(curproc->psl, &ptable.lock);  //DOC: wait-sleep
   }
-
-  release(&ptable.lock);
-
-  return 0;
 }

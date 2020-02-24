@@ -134,8 +134,11 @@ void semaphoreTest()
     KT_Create((void*)&criticalFuction, (void*)&sem);
   }
 
-  //criticalFuction(&sem);
-  exit();
+  for(int i = 0; i < 4; i++)
+  {
+    printf(stdout, "Waiting to Join thread %d\n", i);
+    KT_Join();
+  }
 }
 
 int

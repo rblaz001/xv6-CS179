@@ -106,12 +106,7 @@ sys_kt_create(void)
 int
 sys_kt_join(void)
 {
-  int tid;
-
-  if(argint(0, &tid) < 0)
-    return -1;
-
-  return KT_Join(tid);
+  return KT_Join();
 }
 
 int
