@@ -118,7 +118,7 @@ void criticalFuction(int* sem)
 
 void semaphoreTest()
 {
-  int sem = sem_init(1);
+  int sem = sem_initialize(1);
 
   if(sem == -1)
   {
@@ -134,7 +134,8 @@ void semaphoreTest()
     KT_Create((void*)&criticalFuction, (void*)&sem);
   }
 
-  criticalFuction(&sem);
+  //criticalFuction(&sem);
+  exit();
 }
 
 int
