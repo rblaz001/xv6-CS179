@@ -8,4 +8,4 @@ addons:
   apt_packages:
   - qemu
 script:
-  - (timeout 720 bash -c " { echo ls ; echo usertests; } | make qemu-nox"; exit 0)
+  - (timeout 600 bash -c " { echo ls ; echo usertests; } | make qemu-nox"; exit 0)
