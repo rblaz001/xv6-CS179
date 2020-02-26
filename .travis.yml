@@ -1,8 +1,11 @@
+branches:
+  only:
+  - master
+  - Dev
 language: c
 os: linux
 addons:
   apt_packages:
   - qemu
 script:
-  - make
-  - (timeout 30 bash -c "echo ' usertests\n kernelthreadtests\n' | make qemu-nox"; exit 0)
+  - (timeout 720 bash -c " { echo ls ; echo usertests; } | make qemu-nox"; exit 0)

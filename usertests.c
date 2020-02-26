@@ -7,6 +7,7 @@
 #include "syscall.h"
 #include "traps.h"
 #include "memlayout.h"
+#include "kernelthreadtests.c"
 
 char buf[8192];
 char name[3];
@@ -1745,38 +1746,9 @@ rand()
   return randstate;
 }
 
-// void hello(void* arg){
-//   printf(1, "hello\n");
-//   exit();
-// }
-
 int
 main(int argc, char *argv[])
 {
-  // printf(1, "testing things\n");
-  // int pid = -1;
-
-  // char msg[3];
-  // msg[1] = '\n';
-  // msg[2] = '\0';
-
-  // for(int i = 0; i < 4; i++){
-  //   if(pid != 0){
-  //     msg[0] = '0' + i;
-  //     printf(1, msg);
-  //     pid = KT_Create((void*)&hello, (void*)0);
-  //   }
-  // }
-
-  // if(pid == 0){
-  //   printf(1, "Yo I'm the child\n");
-  // }
-
-  // if(pid != 0){
-  //   printf(1, "I'm the parent\n");
-  // }
-
-  // exit();
 
   printf(1, "usertests starting\n");
 
@@ -1798,7 +1770,7 @@ main(int argc, char *argv[])
   bigargtest();
   bsstest();
   sbrktest();
-  // validatetest();
+  // validatetest();  //This test is skipped until user arg validation bug is fixed
 
   opentest();
   writetest();
@@ -1826,6 +1798,9 @@ main(int argc, char *argv[])
   bigdir(); // slow
 
   uio();
+
+  // kernel thread tests
+  semaphoreTest();
 
   exectest();
 

@@ -1,3 +1,6 @@
+#ifndef USER_H
+#define USER_H
+
 struct stat;
 struct rtcdate;
 
@@ -33,7 +36,7 @@ int sem_initialize(int);
 >>>>>>> eaa0bd8... Having issues waking up sleeping thread during KT_join. Looked in gdb and it turns out that when a thread exits, for some reason the value of proc->psl is 0 instead of expected pointer to sl entry. Will debug later. Othewise should work
 int sem_wait(int);
 int sem_signal(int);
-void sem_free(int);
+int sem_free(int);
 
 // ulib.c
 int stat(const char*, struct stat*);
@@ -48,3 +51,5 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+
+#endif /* USER_H */
