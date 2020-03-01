@@ -3,10 +3,12 @@
 
 #include "types.h"
 
-struct context{
-    uint esp;
-    uint ebp;
-    uint eip;
+struct context {
+  uint edi;
+  uint esi;
+  uint ebx;
+  uint ebp;
+  uint eip;
 };
 
 enum tpcbstate { UNUSED, USED };
