@@ -13,15 +13,17 @@ struct table {
 
 struct table * utable;
 
+int sched_index = 1;
+
 int
 UT_Init(){
-  utable = (struct table *)malloc(sizeof(struct table));
   struct tpcb * t;
   for (t = utable->tpcb; t < &utable->tpcb[UT_COUNT]; t++){
     t->state = UNUSED;
     t->utid = -1;
   }
   if(utable == 0) return -1;
+
   return 0;  
 }
 
@@ -56,18 +58,39 @@ UT_exit(void){
   return -1;
 }
 
-int
-UT_yield(void){
-  return -1;
+void
+increment_sched_index(){
+  if(sched_index == UT_COUNT - 1){
+    sched_index = 0;
+  }
+  else{
+    sched_index++;
+  }
 }
 
 void
 UT_Scheduler(void){
+  struct tpcb * t = &utable->tpcb[sched_index];
+  struct tpcb * curr_tpcb ;
+
+  while( 1 ){
+    if (t->state == USED){
+      if(sched_index == 0){
+        curr_tpcb = &utable->tpcb[UT_COUNT - 1];
+      }
+      else{
+        curr_tpcb = &utable->tpcb[sched_index - 1];
+      }
+      increment_sched_index();
+      UT_Switch(curr_tpcb, t);
+    }
+    increment_sched_index();
+  }
 }
 
-int
-UT_Free(){
-
+void
+UT_yield(void){
+  UT_Scheduler();
 }
 
 #endif /*__uthread__*/
