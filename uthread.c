@@ -35,11 +35,10 @@ UT_Create(void (*fnc)(void*), void* arg){
       continue;
     t->state = USED;
     t->utid = tid++;
-    t->mallocptr = malloc(PGSIZE);
-    void * sp = t->mallocptr + PGSIZE - 1;
     uint ustack[2];
     ustack[0] = 0xffffffff;  // fake return PC
     ustack[1] = (uint)arg;         // pointer to argument that is passed to function
+    void * sp = t->sp;
     sp -= 3*4;
 
     sp -= sizeof(struct context);
@@ -50,11 +49,6 @@ UT_Create(void (*fnc)(void*), void* arg){
     return t->utid;
   }
 
-  return -1;
-}
-
-int
-UT_exit(void){
   return -1;
 }
 
@@ -86,6 +80,21 @@ UT_Scheduler(void){
     }
     increment_sched_index();
   }
+}
+
+void
+UT_exit(void){
+  struct tpcb * curr_tpcb;
+  struct tpcb * t = &utable->tpcb[sched_index];
+  if(sched_index == 0){
+      curr_tpcb = &utable->tpcb[UT_COUNT - 1];
+    }
+  else{
+      curr_tpcb = &utable->tpcb[sched_index - 1];
+  }
+  curr_tpcb->state = UNUSED;
+
+  UT_Switch(curr_tpcb, t);
 }
 
 void

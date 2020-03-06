@@ -15,7 +15,7 @@ enum tpcbstate { UNUSED, USED };
 
 struct tpcb{
     int utid;
-    void* mallocptr;
+    void* sp[4096];
     struct context * context;
     enum tpcbstate state;
 };
