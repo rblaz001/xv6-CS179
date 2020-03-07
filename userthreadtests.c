@@ -2,8 +2,11 @@
 #include "user.h"
 #include "uthread.c"
 
-void print_to_io(void * x)
+int test = 7;
+
+void print_to_io(int * x)
 {
+  printf(1, "address of arg = %d\n", x);
   int stdout = 1;
 
   for(int i = 1; i <= 10; i++)
@@ -17,13 +20,15 @@ void print_to_io(void * x)
     }
   }
 
+  printf(stdout, "Expected arg = 7, Actual arg = %d\n", *x);
+
   UT_exit();
 }
 
 void userThreadsFuction(){
   UT_Init();
-  UT_Create( (void*)&print_to_io, (void*)0);
-  UT_Create( (void*)&print_to_io, (void*)0);
+  UT_Create( (void*)&print_to_io, (void*)&test);
+  UT_Create( (void*)&print_to_io, (void*)&test);
   UT_yield();
-  print_to_io((void*)0);
+  print_to_io((void*)&test);
 }

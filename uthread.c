@@ -49,8 +49,8 @@ UT_Create(void (*fnc)(void*), void* arg){
     ustack[0] = 0xffffffff;  // fake return PC
     ustack[1] = (uint)arg;         // pointer to argument that is passed to function
     void * sp = t->sp + PGSIZE-1;
-    sp -= 3*4;
-    memmove(sp+4, ustack, 2*4);
+    sp -= 2*4;
+    memmove(sp, ustack, 2*4);
 
     sp -= sizeof(struct context);
     t->context = (struct context *)sp;
@@ -76,6 +76,8 @@ increment_sched_index(){
 
 void
 UT_Scheduler(void){
+  if(uthread_count == 1 && sched_index == 1)
+    return;
   struct tpcb * t = &utable->tpcb[sched_index];
   struct tpcb * curr_tpcb;
   if(sched_index == 0){
@@ -103,7 +105,7 @@ UT_yield(void){
 
 int
 UT_shutdown(void){
-  if(sched_index == UT_COUNT-1){
+  if(sched_index == 1){
     while(uthread_count != 1){
       UT_yield();
     }
@@ -115,7 +117,7 @@ UT_shutdown(void){
 
 void
 root_exit() {
-  if(sched_index == UT_COUNT-1){
+  if(sched_index == 1){
     while(uthread_count != 1){
       UT_yield();
     }
@@ -128,7 +130,6 @@ void
 UT_exit(void){
   root_exit();
   struct tpcb * curr_tpcb;
-  struct tpcb * t = &utable->tpcb[sched_index];
   if(sched_index == 0){
       curr_tpcb = &utable->tpcb[UT_COUNT - 1];
     }
@@ -138,7 +139,7 @@ UT_exit(void){
   curr_tpcb->state = UNUSED;
   uthread_count--;
 
-  swtch(&curr_tpcb->context, t->context);
+  UT_Scheduler();
 }
 
 void
