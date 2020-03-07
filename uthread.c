@@ -31,6 +31,7 @@ UT_Init(){
   t->state = USED;
   t->utid = tid++;
   uthread_count = 1;
+  sched_index = 1;
 
   return 0;  
 }
@@ -98,6 +99,18 @@ UT_Scheduler(void){
 void
 UT_yield(void){
   UT_Scheduler();
+}
+
+int
+UT_shutdown(void){
+  if(sched_index == UT_COUNT-1){
+    while(uthread_count != 1){
+      UT_yield();
+    }
+    free(utable);
+    return 0;
+  }
+  return -1;
 }
 
 void
