@@ -106,6 +106,7 @@ root_exit() {
     while(uthread_count != 1){
       UT_yield();
     }
+    free(utable);
     exit();
   }
 }
