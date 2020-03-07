@@ -3,9 +3,12 @@
 #include  "ut_tcb.h"
 #include  "user.h"
 
-const int UT_COUNT =  8;
+
+#define UT_COUNT 8
 const int PGSIZE = 4096;
 int tid = 0;
+
+void swtch(struct context**, struct context*);
 
 struct table {
   struct tpcb tpcb[UT_COUNT];
@@ -40,6 +43,7 @@ UT_Create(void (*fnc)(void*), void* arg){
     ustack[1] = (uint)arg;         // pointer to argument that is passed to function
     void * sp = t->sp;
     sp -= 3*4;
+    memmove(sp, ustack, 3*4);
 
     sp -= sizeof(struct context);
     t->context = (struct context *)sp;
@@ -76,7 +80,7 @@ UT_Scheduler(void){
         curr_tpcb = &utable->tpcb[sched_index - 1];
       }
       increment_sched_index();
-      UT_Switch(curr_tpcb, t);
+      swtch(&curr_tpcb->context, t->context);
     }
     increment_sched_index();
   }
@@ -94,7 +98,7 @@ UT_exit(void){
   }
   curr_tpcb->state = UNUSED;
 
-  UT_Switch(curr_tpcb, t);
+  swtch(&curr_tpcb->context, t->context);
 }
 
 void
