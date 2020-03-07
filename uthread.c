@@ -15,6 +15,7 @@ struct table {
 }*utable;
 
 int sched_index = 1;
+int uthread_count = 0;
 
 int
 UT_Init(){
@@ -29,6 +30,7 @@ UT_Init(){
   t = &utable->tpcb[0];
   t->state = USED;
   t->utid = tid++;
+  uthread_count = 1;
 
   return 0;  
 }
@@ -54,6 +56,7 @@ UT_Create(void (*fnc)(void*), void* arg){
     memset(t->context, 0, sizeof *t->context);
     t->context->eip = (uint)fnc;
     t->context->ebp = (uint)&t->context->eip + 4;
+    uthread_count++;
     return t->utid;
   }
 
@@ -93,7 +96,23 @@ UT_Scheduler(void){
 }
 
 void
+UT_yield(void){
+  UT_Scheduler();
+}
+
+void
+root_exit() {
+  if(sched_index == UT_COUNT-1){
+    while(uthread_count != 1){
+      UT_yield();
+    }
+    exit();
+  }
+}
+
+void
 UT_exit(void){
+  root_exit();
   struct tpcb * curr_tpcb;
   struct tpcb * t = &utable->tpcb[sched_index];
   if(sched_index == 0){
@@ -103,13 +122,9 @@ UT_exit(void){
       curr_tpcb = &utable->tpcb[sched_index - 1];
   }
   curr_tpcb->state = UNUSED;
+  uthread_count--;
 
   swtch(&curr_tpcb->context, t->context);
-}
-
-void
-UT_yield(void){
-  UT_Scheduler();
 }
 
 void
