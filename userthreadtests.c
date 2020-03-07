@@ -8,12 +8,12 @@ void print_to_io(void * x)
 
   for(int i = 1; i <= 10; i++)
   {
-      UT_yield();
       printf(stdout, "%d\n", i);
+      UT_yield();
 
     if(i == 10){
-      UT_yield();
       printf(stdout, "Finished\n");
+      UT_yield();
     }
   }
 
@@ -21,14 +21,9 @@ void print_to_io(void * x)
 }
 
 void userThreadsFuction(){
-    int stdout = 1;
   UT_Init();
-  printf(stdout, "after init\n");
   UT_Create( (void*)&print_to_io, (void*)0);
-  printf(stdout, "after first ut\n");
   UT_Create( (void*)&print_to_io, (void*)0);
-  printf(stdout, "after second ut\n");
   UT_yield();
-  printf(stdout, "after yield ut\n");
   print_to_io((void*)0);
 }
