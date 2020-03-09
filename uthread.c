@@ -2,6 +2,7 @@
 #define __uthread__
 #include  "ut_tcb.h"
 #include  "user.h"
+#include  "uthread.h"
 
 
 #define UT_COUNT 8

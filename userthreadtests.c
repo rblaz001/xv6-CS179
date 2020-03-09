@@ -1,6 +1,6 @@
 #include "types.h"
 #include "user.h"
-#include "uthread.c"
+#include "uthread.h"
 
 int test = 7;
 
