@@ -96,7 +96,6 @@ sys_kt_create(void)
   char* fnc;
   char* arg;
   
-  //Possible exploit by not having size of arg value
   if(argptr(0, &fnc, sizeof(int)) || argptr(1, &arg, 0) < 0)
     return -1;
 

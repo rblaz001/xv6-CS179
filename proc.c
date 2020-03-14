@@ -7,13 +7,18 @@
 #include "proc.h"
 #include "spinlock.h"
 
+// This is a struct used to enable queue functionality to semaphores
+// This queue holds sleeping kernel threads waiting to obtain access to critical section
+// This queue is used to allow multiplexing.
 struct queue {
     struct proc* q[MAXQ];
     int front;
     int back;
     int count;
 };
- 
+
+
+// This struct wraps a spinlock with added queueu functionality that allows for semaphore implementation
 struct semaphore {
     struct spinlock lock;
     struct queue queue;
@@ -26,13 +31,14 @@ struct {
   struct proc proc[NPROC];
 } ptable;
 
-// process stack list table
+// This is our struct for the process stack list table known as the sltable
+// The sltable holds all of the book keeping for the kernel threads that share a pagetable
 struct {
   struct spinlock lock;
   struct psl psl[KT_TABLESIZE];
 } sltable;
 
-// semaphore table
+// This is a struct that denotes which semaphore is in use
 struct {
   struct spinlock lock;
   struct semaphore sem[KT_TABLESIZE];
@@ -51,7 +57,7 @@ pinit(void)
 {
   initlock(&ptable.lock, "ptable");
   initlock(&sltable.lock, "sltable");   // Initialize lock for sltable
-  initlock(&semtable.lock, "semtable");
+  initlock(&semtable.lock, "semtable"); // Initialize lock for semtable
 }
 
 // Must be called with interrupts disabled
@@ -143,6 +149,8 @@ found:
   return p;
 }
 
+// Allocation for thread proc. It has the same implementation as allocproc 
+// except it does not increment the global PID.  
 static struct proc*
 tallocproc(void)
 {
@@ -158,6 +166,8 @@ tallocproc(void)
   release(&ptable.lock);
   return 0;
 
+// After available entry in the ptable is found, process state is set to EMBRYO
+// In allocproc this would also increment the PID and set p->pid = nextpid++
 found:
   p->state = EMBRYO;
 
@@ -262,10 +272,16 @@ fork(void)
     return -1;
   }
 
+  // If the current process has a process stack list entry assigned to it
+  // Then set slindex to the current threads stack list index
+  // This index will be used to directly manipulate the user stack of this thread
   if(curproc->psl != 0)
     slindex = curproc->slindex;
 
   // Copy process state from proc.
+  // Copies user stack of current thread to a new pagetable
+  // The location of the user stack in the new virtual memory will be
+  // The first entry after kernbase
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz, slindex)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
@@ -278,7 +294,7 @@ fork(void)
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
-  // Offset stack pointer for new process based off of old process stack location
+  // Offset stack pointer for new process
   np->tf->esp += slindex*2*PGSIZE;
 
   for(i = 0; i < NOFILE; i++)
@@ -299,35 +315,48 @@ fork(void)
   return pid;
 }
 
+// Generates a new kernel level thread and initiates its starting location to function pointer
+// and initializes its user stack to contain arg pointer as an argument
+// Parameters: void (*fnc)(void*), void *arg 
+// fnc: pointer to a function. This will be used as the entry point for the new generated thread
+// arg: argument that will be passed to function fnc is pointing to. Is initialized on user stack
 int 
 KT_Create(void (*fnc)(void*), void* arg)
 {
   
-  struct psl* sl;
-  int slindex = -1; // Expected to be update to available index value in psl otherwise remains -1
+  struct psl* sl;   // Pointer to process stack list
+  int slindex = -1; // Expected to be updated to available index value in psl otherwise remains -1
 
-  // Check for if a null pointer is passed as a fnc
+  // Check if a null pointer is passed as a fnc
+  // If it is a null pointer return with error code -1
   void *sp = 0;
   if (fnc == 0)
     return -1;
 
   struct proc *curproc = myproc();
 
+  // We check if current proccess has a process stack list entry
+  // If it doesn't, we traverse through process stack list table and find unused entry
+      // If entry found we initialize stack list entry by adding current threads user stack to psl entry 0
+      // We then allocate space for a user stack for the new kernel thread and assign it to the psl entry 1
+  // Else we allocate space for a user stack and assign it to available psl entry associated to current thread
   acquire(&sltable.lock);
   if (curproc->psl == 0){
     for(sl = sltable.psl; sl < &sltable.psl[KT_TABLESIZE]; sl++){
       if (sl->state != UNUSED)
         continue;
       
+      // Initializing psl entry
       sl->state = 1;
       curproc->psl = sl;
       // Setting the first stack position to occupied in our psl's stackz
+      // This is associated with current threads user stack
       sl->stackz[0] = 1;
       curproc->slindex = 0;   // Initialize current thread stack list index 
       sl->thread_count = 2;   // Initialize Thread Count
       slindex = 1;            // Set stack list index for new stack to 1
 
-    //allocate second thread's stack
+    //allocate the new thread's stack
     if ((sp = (void*)allocuvm(curproc->pgdir, STACKBOTTOM - 4*PGSIZE, STACKBOTTOM - 2*PGSIZE)) == 0)
       goto bad;
 
@@ -337,6 +366,8 @@ KT_Create(void (*fnc)(void*), void* arg)
     }
   }
   else{
+    // Checks if current threads process stack list is full
+    // If it is full return with error code -1
     if(curproc->psl->thread_count == 8){
       release(&sltable.lock);
       return -1;
@@ -361,6 +392,7 @@ KT_Create(void (*fnc)(void*), void* arg)
   }
   release(&sltable.lock);
 
+  // calls clone to initialize the user stack of the newly created thread
   return clone(sp, slindex, fnc, arg);
   
   bad:
@@ -370,16 +402,26 @@ KT_Create(void (*fnc)(void*), void* arg)
     return -1;
 }
 
+
+// Clone initializes proc for newly created thread
+// Clone also initializes userstack with provided function pointer and arg pointer
+// Paramaters: void* sp, int slindex, void (*fnc)(void*), void* arg
+// sp: pointer to the newly allocated memory used for user stack
+// slindex: offset used to identify current process's psl
+// fnc: pointer to a function. This will be used as the entry point for the new generated thread
+// arg: argument that will be passed to function fnc is pointing to. Is initialized on user stack
 int 
 clone(void* sp, int slindex, void (*fnc)(void*), void* arg)
 {
   struct proc* nt;
   struct proc* cur_thread = myproc();
 
-   if((nt = tallocproc()) == 0){
+  // Allocates new proc
+  if((nt = tallocproc()) == 0){
     return -1;
   }
 
+  // Initializes newly acquired proc for newly created thread
   nt->pthread = cur_thread;
   nt->psl = cur_thread->psl;
   nt->slindex = slindex;
@@ -402,7 +444,7 @@ clone(void* sp, int slindex, void (*fnc)(void*), void* arg)
   uint ustack[2];
   
   ustack[0] = 0xffffffff;  // fake return PC
-  ustack[1] = (uint)arg;         // pointer to argument that is passed to function
+  ustack[1] = (uint)arg;   // pointer to argument that is passed to function
   sp -= 2*4;               // make room for ustack on the stack
 
   if(copyout(nt->pgdir, (uint)sp, ustack, 2*4) < 0)
@@ -421,6 +463,8 @@ clone(void* sp, int slindex, void (*fnc)(void*), void* arg)
   return nt->tid;
 }
 
+// Clears process stack list entry for current process
+// Also Deallocates user stack of current process
 void 
 clear_psl(struct proc* curproc)
 {
@@ -475,9 +519,10 @@ exit(void)
   // Parent might be sleeping in wait().
   wakeup1(curproc->parent);
   
+  // If current process is multithreaded
+  // Then will wake up any sleeping thread in KT_join()
   if(curproc->psl != 0)
   {
-    // Parent thread might be sleeping in KT_join().
     wakeup1(curproc->psl);
   }
 
@@ -518,10 +563,12 @@ wait(void)
         pid = p->pid;
         kfree(p->kstack);
         p->kstack = 0;
-        if(p->psl == 0 || p->psl->thread_count == 0)
-          freevm(p->pgdir);
+        // Clears current psl entry. If last entry sets p->psl to 0
         if(p->psl != 0)
           clear_psl(p);
+        // If current process is not associated to a psl free the page table entry
+        if(p->psl == 0)
+          freevm(p->pgdir);
         p->pid = 0;
         p->parent = 0;
         p->name[0] = 0;
@@ -769,6 +816,9 @@ procdump(void)
   }
 }
 
+// Finds an unused semaphore in the semtable and initializes it
+// parameters: int initCount
+// initCount: The number threads that can enter critical region
 int
 sem_initialize(int initCount)
 {
@@ -777,6 +827,7 @@ sem_initialize(int initCount)
     if (semtable.sem[i].state != UNUSED)
       continue;
 
+    // sem_init initializes semaphore with initCount
     sem_init(&semtable.sem[i], initCount);
     release(&semtable.lock);
     return i;
@@ -787,8 +838,11 @@ sem_initialize(int initCount)
   return -1;
 }
 
-  //----------------------------------------------------------
 
+// If other threads are waiting and signal is called 
+// then one of the waiting threads is woken up and enters critical section
+// parameters: int index
+// index: index is an offset used to reference semaphore from semtable
 int 
 sem_signal(int index) 
 {
@@ -806,6 +860,12 @@ sem_signal(int index)
   return 0;
 }
 
+// Wait should always be called before signal
+// Check semaphores internal count to see if it is greater than 0
+// If it is greater than 0 then it decrements the count and proceeds
+// Else it decrements the count and enters a sleeping queue
+// parameters: int index
+// index: index is an offset used to reference semaphore from semtable
 int 
 sem_wait(int index) 
 {
@@ -829,6 +889,10 @@ sem_wait(int index)
   return 0;
 }
 
+// Initializes semaphore to allow initCount number of threads in critical section
+// parameters: struct semaphore*, int initCount
+// semaphore: pointer to semaphore struct
+// initCount: The number threads that can enter critical region
 void 
 sem_init(struct semaphore* s, int initCount) 
 {
@@ -843,6 +907,9 @@ sem_init(struct semaphore* s, int initCount)
   }
 }
 
+// Sets semtable entry to unused for semaphore referenced by index
+// parameters: int index
+// index: index is an offset used to reference semaphore from semtable
 void 
 sem_free(int index) 
 {
@@ -853,6 +920,9 @@ sem_free(int index)
     release(&s->lock);
 }
 
+// Places current thread in sleeping queue of provided semaphore
+// parameters: struct semaphore*
+// semaphore: pointer to semaphore struct
 void 
 sem_sleep(struct semaphore* s)
 {
@@ -869,6 +939,7 @@ sem_sleep(struct semaphore* s)
 
   p->state = SEM_SLEEPING;
 
+  //We call sched to schedule a new lightweight proccess
   sched();
 
   // Reacquire semaphore lock.
@@ -876,6 +947,11 @@ sem_sleep(struct semaphore* s)
   acquire(&s->lock);
 }
 
+
+// Checks if there is any thread sleeping in semaphore queue
+// If there is pop them from the queue and set there state to RUNNABLE
+// parameters: struct semaphore*
+// semaphore: pointer to semaphore struct
 void 
 sem_wakeup(struct semaphore* s)
 {
@@ -892,6 +968,8 @@ sem_wakeup(struct semaphore* s)
 // https://www.tutorialspoint.com/data_structures_algorithms/queue_program_in_c.htm
 // Used this resource to help implement queue in c
 
+// Checks if queue is empty
+// returns true if empty else returns false
 int 
 isEmpty(struct queue* que) 
 {
@@ -901,6 +979,8 @@ isEmpty(struct queue* que)
     return 0;
 }
 
+// Checks if queue is full
+// returns true if queue is full else returns false
 int 
 isFull(struct queue* que) 
 {
@@ -910,6 +990,7 @@ isFull(struct queue* que)
     return 0;
 }
 
+// pushes process in to provided queueu
 void 
 push_back(struct queue* que, struct proc* p) 
 {
@@ -924,6 +1005,8 @@ push_back(struct queue* que, struct proc* p)
   }
 }
 
+// Pops the first entry of the queue and returns it
+// If empty returns 0
 struct 
 proc* pop_front(struct queue* que) 
 {
@@ -939,6 +1022,8 @@ proc* pop_front(struct queue* que)
   return p;
 }
 
+// Traverses the ptable and tries to locate first exited child thread
+// If no child thread has exited, it will call sleep and wait to be woken up by exited child thread
 int
 KT_Join(void)
 {

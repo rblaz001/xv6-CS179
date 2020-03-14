@@ -61,12 +61,19 @@ exec(char *path, char **argv)
   ip = 0;
   sz = PGROUNDUP(sz);
 
-  // Allocate two pages. Top to bottom
+  /*----------------------------------------------------------------------------------*/
+  /* Previously xv6 implemented its user stack at the bottom of the memory address    */
+  /* begining right after user data/code. We modified the location of the user stack. */
+  /* The user stack is now located at high memory address bellow the kernel space.    */
+  /* We have done this to make rome for the user stacks of kernel thread.             */
+  /*------------------------------------------------------------------------------------*/
+
+  // Allocate two pages. Top of memory address to bottom of memory address
   // Make the second inaccessible.  Use the first as the user stack.
   if((sp = allocuvm(pgdir, STACKBOTTOM - 2*PGSIZE, STACKBOTTOM)) == 0)
     goto bad;
-  // Clear the first page table allocated and make inaccessible
-  clearpteu(pgdir, (char*)(sp - 2*PGSIZE)); // Clears 1 page table upward starting from pointer
+  // Clears the second page table and makes it inaccessible
+  clearpteu(pgdir, (char*)(sp - 2*PGSIZE));
 
   // Push argument strings, prepare rest of stack in ustack.
   for(argc = 0; argv[argc]; argc++) {

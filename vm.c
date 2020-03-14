@@ -311,7 +311,7 @@ clearpteu(pde_t *pgdir, char *uva)
 }
 
 // Given a parent process's page table, create a copy
-// of it for a child.
+// of it for a child. Copies user stack based off of slindex
 pde_t*
 copyuvm(pde_t *pgdir, uint sz, int slindex)
 {

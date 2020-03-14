@@ -1,4 +1,5 @@
-#https://github.com/kmontg/xv6-docker
+# The following resource provided our initial docker configuration
+# https://github.com/kmontg/xv6-docker
 FROM ubuntu:16.04
 
 RUN apt-get -qq update

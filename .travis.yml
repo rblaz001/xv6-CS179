@@ -1,3 +1,6 @@
+# Configuration file for Travis CI
+
+# Only run integration testing on master and Dev branch
 branches:
   only:
   - master
@@ -7,5 +10,9 @@ os: linux
 addons:
   apt_packages:
   - qemu
+
+  # Script that will initiate qemu and run xv6
+  # Set to timout after 10 minutes. Currently no other way to automate exit
+  # The first command passed to xv6 is 'ls' but it is expected to fail. It is recieved prior to build completion
 script:
   - (timeout 600 bash -c " { echo ls ; echo usertests; } | make qemu-nox"; exit 0)

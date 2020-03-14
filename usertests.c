@@ -1807,4 +1807,6 @@ main(int argc, char *argv[])
   userThreadsFuction();
 
   exectest();
+
+  exit();
 }
