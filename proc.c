@@ -6,7 +6,6 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
-// #include "semaphore.h"
 
 struct queue {
     struct proc* q[MAXQ];
@@ -24,19 +23,19 @@ struct semaphore {
 
 struct {
   struct spinlock lock;
-  struct proc proc[NPROC];   // 8 threads possible per process
+  struct proc proc[NPROC];
 } ptable;
 
 // process stack list table
 struct {
   struct spinlock lock;
-  struct psl psl[NPROC];
+  struct psl psl[KT_TABLESIZE];
 } sltable;
 
 // semaphore table
 struct {
   struct spinlock lock;
-  struct semaphore sem[NPROC];
+  struct semaphore sem[KT_TABLESIZE];
 } semtable;
 
 static struct proc *initproc;
@@ -316,7 +315,7 @@ KT_Create(void (*fnc)(void*), void* arg)
 
   acquire(&sltable.lock);
   if (curproc->psl == 0){
-    for(sl = sltable.psl; sl < &sltable.psl[NPROC]; sl++){
+    for(sl = sltable.psl; sl < &sltable.psl[KT_TABLESIZE]; sl++){
       if (sl->state != UNUSED)
         continue;
       
@@ -774,7 +773,7 @@ int
 sem_initialize(int initCount)
 {
   acquire(&semtable.lock);
-  for(int i = 0; i < NPROC; i++){
+  for(int i = 0; i < KT_TABLESIZE; i++){
     if (semtable.sem[i].state != UNUSED)
       continue;
 
