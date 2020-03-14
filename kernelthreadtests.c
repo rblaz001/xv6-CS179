@@ -25,6 +25,8 @@ void criticalFuction(int* sem)
 void semaphoreTest()
 {
   int stdout = 1;
+  printf(stdout, "Starting semaphoreTest\n");
+
   int sem = sem_initialize(1);
 
   if(sem == -1)
@@ -47,4 +49,6 @@ void semaphoreTest()
     KT_Join();
   }
   sem_free(sem);
+
+  printf(stdout, "semaphoreTest ok\n");
 }

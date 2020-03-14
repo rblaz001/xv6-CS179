@@ -7,7 +7,6 @@ void increment_sched_index(void);
 void UT_Scheduler(void);
 void UT_yield(void);
 int UT_shutdown(void);
-void root_exit(void);
 void UT_exit(void);
 void UT_free(void);
 

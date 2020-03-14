@@ -1803,7 +1803,8 @@ main(int argc, char *argv[])
   // kernel thread tests
   semaphoreTest();
 
-  exectest();
+  // user thread test
   userThreadsFuction();
-  exit();
+
+  exectest();
 }

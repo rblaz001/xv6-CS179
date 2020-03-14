@@ -4,6 +4,14 @@
 #include  "user.h"
 #include  "uthread.h"
 
+#define ROOT_EXIT                 \
+  if(sched_index == 1){           \
+    while(uthread_count != 1){    \
+      UT_yield();                 \
+    }                             \
+    free(utable);                 \
+    return;                       \
+  }
 
 #define UT_COUNT 8
 const int PGSIZE = 4096;
@@ -117,19 +125,8 @@ UT_shutdown(void){
 }
 
 void
-root_exit() {
-  if(sched_index == 1){
-    while(uthread_count != 1){
-      UT_yield();
-    }
-    free(utable);
-    exit();
-  }
-}
-
-void
 UT_exit(void){
-  root_exit();
+  ROOT_EXIT
   struct tpcb * curr_tpcb;
   if(sched_index == 0){
       curr_tpcb = &utable->tpcb[UT_COUNT - 1];

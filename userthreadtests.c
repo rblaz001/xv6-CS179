@@ -26,9 +26,11 @@ void print_to_io(int * x)
 }
 
 void userThreadsFuction(){
+  printf(1, "Starting userThreadsFunction\n");
   UT_Init();
   UT_Create( (void*)&print_to_io, (void*)&test);
   UT_Create( (void*)&print_to_io, (void*)&test);
   UT_yield();
   print_to_io((void*)&test);
+  printf(1, "userThreadsFunction ok\n");
 }
