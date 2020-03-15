@@ -636,15 +636,22 @@ scheduler(void)
       if(p->state != RUNNABLE)
         continue;
 
-        uint waitDiff;
-        if(p->lastWait){
-          acquire(&tickslock);
-          waitDiff = ticks - p->lastWait;
-          p->waitTime = p->waitTime + waitDiff;
-          p->lastWait = ticks;
-          release(&tickslock);
-        }
-        
+      uint waitDiff;
+      if(p->lastWait){
+        acquire(&tickslock);
+        waitDiff = ticks - p->lastWait;
+        p->waitTime = p->waitTime + waitDiff;
+        p->lastWait = ticks;
+        release(&tickslock);
+      }
+
+      if(myproc() != 0)
+      {
+        acquire(&tickslock);
+        myproc()->lastWait = ticks;
+        release(&tickslock);
+      }
+
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
