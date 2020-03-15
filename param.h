@@ -1,4 +1,4 @@
-#define NPROC       256  // maximum number of light weight processes
+#define NPROC       128  // maximum number of light weight processes
 #define KSTACKSIZE 4096  // size of per-process kernel stack
 #define NCPU          8  // maximum number of CPUs
 #define NOFILE       16  // open files per process
@@ -12,5 +12,5 @@
 #define NBUF         (MAXOPBLOCKS*3)  // size of disk block cache
 #define FSSIZE     1000  // size of file system in blocks
 #define MAXQ          7  // max # of threads waiting from a semaphore       
-#define KT_TABLESIZE (NPROC/8)  // max # of table entries for kernel thread tables 
+#define KT_TABLESIZE (NPROC/2)  // max # of table entries for kernel thread tables 
                                 // e.g. process stack list table and semaphore table
