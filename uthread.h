@@ -8,6 +8,5 @@ void UT_Scheduler(void);
 void UT_yield(void);
 int UT_shutdown(void);
 void UT_exit(void);
-void UT_free(void);
 
 #endif /* uthread.h */

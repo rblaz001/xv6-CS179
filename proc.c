@@ -408,7 +408,7 @@ KT_Create(void (*fnc)(void*), void* arg)
 // Paramaters: void* sp, int slindex, void (*fnc)(void*), void* arg
 // sp: pointer to the newly allocated memory used for user stack
 // slindex: offset used to identify current process's psl
-// fnc: pointer to a function. This will be used as the entry point for the new generated thread
+// fnc: pointer to a function. This will be used as the entry point for the newly generated thread
 // arg: argument that will be passed to function fnc is pointing to. Is initialized on user stack
 int 
 clone(void* sp, int slindex, void (*fnc)(void*), void* arg)
@@ -440,7 +440,7 @@ clone(void* sp, int slindex, void (*fnc)(void*), void* arg)
   nt->pid = cur_thread->pid;
   nt->tid = cur_thread->tid + 1;
 
-  //Populating user stack with fake return and argument to passed function
+  //Populating user stack with fake return and argument(s) to passed function
   uint ustack[2];
   
   ustack[0] = 0xffffffff;  // fake return PC
