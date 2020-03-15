@@ -1,7 +1,11 @@
 #include "types.h"
 #include "user.h"
 
+struct arguments;
+
 void criticalFuction(int* sem);
+void frisbee(struct arguments * arg);
+int numberOfThrows;
 
 // This is a test for kernel level thread synchronization using semaphores.
 // Generate 4 user threads that are set to enter a critical function.
@@ -62,6 +66,73 @@ void criticalFuction(int* sem)
       printf(stdout, "Finished\n");
   }
   sem_signal(*sem);
+
+  exit();
+}
+
+struct arguments {
+  int player;
+  int sem;
+  int numPlayers;
+  int numThrows;
+  int * thrower;
+  int * counter;
+};
+
+
+void frisbeeGame(int numPlayers, int numThrows){
+  numberOfThrows = numThrows;
+  int thrower = 0;
+  int counter = 1;
+  int sem = sem_initialize(1);
+
+  if (!(numPlayers > 2 && numPlayers <= 7)){
+    printf(1, "Need between 2 and 7 players to play frisbee\n");
+    exit();
+  }
+
+  for (int i = 0; i < numPlayers; i++){
+    struct arguments * arg = (struct arguments *) malloc(sizeof(struct arguments));
+    arg->player = i;
+    arg->sem = sem;
+    arg->numPlayers = numPlayers;
+    arg->numThrows = numThrows;
+    arg->thrower = &thrower;
+    arg->counter = &counter;
+    KT_Create((void*)&frisbee, (void*)arg);
+  }
+
+  for(int i = 0; i < numPlayers; i++)
+  {
+    KT_Join();
+  }
+
+  exit();
+}
+
+void frisbee(struct arguments * arg){
+  while (1) {
+
+    sem_wait(arg->sem);
+
+    if (arg->numThrows+1 == *arg->counter) {
+      sem_signal(arg->sem);
+      break;
+    }
+
+    if(*arg->thrower == arg->player){
+      printf(1, "Pass number no: %d, Thread %d is passing the frisbee to thread %d \n\n ", 
+        *arg->counter,
+        arg->player,
+        (arg->player + 1) % arg->numPlayers
+      );
+
+      (*arg->counter)++;
+      *arg->thrower = (*arg->thrower + 1) % arg->numPlayers;
+    }
+
+    sem_signal(arg->sem);
+  }
 
   exit();
 }
