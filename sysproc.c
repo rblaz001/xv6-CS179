@@ -96,7 +96,7 @@ sys_kt_create(void)
   char* fnc;
   char* arg;
   
-  if(argptr(0, &fnc, sizeof(int)) || argptr(1, &arg, 0) < 0)
+  if(argptr(0, &fnc, sizeof(void*)) || argptr(1, &arg, 0) < sizeof(void*))
     return -1;
 
   return KT_Create((void*)fnc, arg);
@@ -163,4 +163,21 @@ sys_sem_free(void)
   
   sem_free(index);
   return 0;
+}
+
+int
+sys_retrieve_process_statistics(void)
+{
+  int* totalElapsedTime;
+  int* totalRunTime;
+  int* totalWaitTime;
+
+  if(argptr(0, (char **)&totalElapsedTime, sizeof(int*)) ||
+     argptr(1, (char **)&totalRunTime, sizeof(int*)) ||
+     argptr(2, (char **)&totalWaitTime, sizeof(int*)) )
+     {
+       return -1;
+     }
+
+     return retrieve_process_statistics(totalElapsedTime, totalRunTime, totalWaitTime);
 }

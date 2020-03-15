@@ -73,7 +73,7 @@ void criticalFuction(struct sem_args* args)
 {
   int stdout = 1;
   sem_wait(args->mutex);
-  printf(stdout, "Calling Sem Wait");
+  printf(stdout, "Calling Sem Wait\n");
   sem_signal(args->mutex);
  
   sem_wait(args->sem);

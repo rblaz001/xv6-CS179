@@ -109,6 +109,7 @@ extern int sys_sem_initialize(void);
 extern int sys_sem_wait(void);
 extern int sys_sem_signal(void);
 extern int sys_sem_free(void);
+extern int sys_retrieve_process_statistics(void);
 
 
 static int (*syscalls[])(void) = {
@@ -138,7 +139,8 @@ static int (*syscalls[])(void) = {
 [SYS_sem_initialize]    sys_sem_initialize,
 [SYS_sem_wait]    sys_sem_wait,
 [SYS_sem_signal]  sys_sem_signal,
-[SYS_sem_free]    sys_sem_free,  
+[SYS_sem_free]    sys_sem_free,
+[SYS_retrieve_process_statistics]   sys_retrieve_process_statistics,  
 };
 
 void

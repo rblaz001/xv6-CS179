@@ -26,3 +26,4 @@
 #define SYS_sem_signal 25
 #define SYS_sem_free   26
 #define SYS_KT_Join  27
+#define SYS_retrieve_process_statistics  28

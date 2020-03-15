@@ -63,7 +63,14 @@ struct proc {
   int tid;                     // Thread ID
   struct proc *pthread;        // Parent thread
   struct psl *psl;             // Pointer to per-process list of stacks
-  int slindex;                 // Stack list index 
+  int slindex;                 // Stack list index
+  
+  // Used as reference our CS153 Lab 2 assignment
+  // Included adding process metrics
+  // Maaz and Raudel where partners for this lab
+  uint startTime;               // Tick value when process starts
+  uint waitTime;                // Number of ticks when not scheduled
+  uint lastWait;                // Last tick value since reschedule
 };
 
 // Process memory is laid out contiguously, low addresses first:

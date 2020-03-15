@@ -123,6 +123,9 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
 
+  // Initialize process metric tracking
+  init_proc_metrics(p);
+
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -171,6 +174,9 @@ tallocproc(void)
 found:
   p->state = EMBRYO;
 
+  // Initialize process metric tracking
+  init_proc_metrics(p);
+
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -195,6 +201,17 @@ found:
   p->context->eip = (uint)forkret;
 
   return p;
+}
+
+// Initializes metric tracking for process
+void
+init_proc_metrics(struct proc* curproc)
+{
+  acquire(&tickslock);
+	curproc->startTime = ticks;
+  release(&tickslock);
+  curproc->waitTime = 0;
+  curproc->lastWait = 0;
 }
 
 //PAGEBREAK: 32
@@ -619,6 +636,15 @@ scheduler(void)
       if(p->state != RUNNABLE)
         continue;
 
+        uint waitDiff;
+        if(p->lastWait){
+          acquire(&tickslock);
+          waitDiff = ticks - p->lastWait;
+          p->waitTime = p->waitTime + waitDiff;
+          p->lastWait = ticks;
+          release(&tickslock);
+        }
+        
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
@@ -628,7 +654,7 @@ scheduler(void)
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
-
+  
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       c->proc = 0;
@@ -1071,4 +1097,24 @@ KT_Join(void)
     // Wait for children to exit.  (See wakeup1 call in proc_exit.)
     sleep(curproc->psl, &ptable.lock);  //DOC: wait-sleep
   }
+}
+
+int
+retrieve_process_statistics(int* totalElapsedTime, int* totalRunTime, int* totalWaitTime)
+{
+  struct proc* curproc = myproc();
+
+  uint endTime;
+  acquire(&tickslock);
+	endTime = ticks;
+  release(&tickslock);
+
+  if(curproc->startTime > endTime || curproc->startTime == 0 || curproc->waitTime == 0)
+    return -1;
+
+  *totalElapsedTime = endTime - curproc->startTime;
+  *totalWaitTime = curproc->waitTime;
+  *totalRunTime = *totalElapsedTime - curproc->waitTime;
+
+  return 0;
 }
