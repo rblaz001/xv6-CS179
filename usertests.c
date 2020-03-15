@@ -1806,7 +1806,8 @@ main(int argc, char *argv[])
   // // user thread test
   // userThreadsFuction();
 
-  frisbeeGame(4,5);
+  // frisbeeGame(4,5);
+  extremeFrisbeeGame(4,5,2);
 
   // exectest();
   

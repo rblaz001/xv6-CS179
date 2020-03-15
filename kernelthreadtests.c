@@ -2,9 +2,11 @@
 #include "user.h"
 
 struct arguments;
+struct extreme_arguments;
 
 void criticalFuction(int* sem);
 void frisbee(struct arguments * arg);
+void extreme_frisbee(struct extreme_arguments * arg);
 int numberOfThrows;
 
 // This is a test for kernel level thread synchronization using semaphores.
@@ -129,6 +131,102 @@ void frisbee(struct arguments * arg){
 
       (*arg->counter)++;
       *arg->thrower = (*arg->thrower + 1) % arg->numPlayers;
+    }
+
+    sem_signal(arg->sem);
+  }
+
+  exit();
+}
+
+struct frisbees {
+    int thrower;
+    int counter;
+  };
+
+struct extreme_arguments {
+  int player;
+  int sem;
+  int sem_mutex;
+  int numPlayers;
+  int numThrows;
+  int numFrisbees;
+  struct frisbees * frisbees;
+};
+
+void extremeFrisbeeGame(int numPlayers, int numThrows, int numFrisbees){
+  numberOfThrows = numThrows;
+  int sem = sem_initialize(numFrisbees);
+  int sem_mutex = sem_initialize(1);
+
+  if (!(numPlayers > 2 && numPlayers <= 7 )){
+    printf(1, "Need between 2 and 7 players to play frisbee\n");
+    exit();
+  }
+
+
+  struct frisbees * frisbees = (struct frisbees *) malloc(sizeof(struct frisbees)*numFrisbees);
+  for(int i =0; i < numFrisbees; i++){
+    frisbees[i].counter = 1;
+    frisbees[i].thrower= i;
+  }
+
+  for (int i = 0; i < numPlayers; i++){
+    struct extreme_arguments * arg = (struct extreme_arguments *) malloc(sizeof(struct extreme_arguments));
+    arg->player = i;
+    arg->sem = sem;
+    arg->sem_mutex = sem_mutex;
+    arg->numPlayers = numPlayers;
+    arg->numThrows = numThrows;
+    arg->numFrisbees = numFrisbees;
+    arg->frisbees = frisbees;
+    KT_Create((void*)&extreme_frisbee, (void*)arg);
+  }
+
+  for(int i = 0; i < numPlayers; i++)
+  {
+    KT_Join();
+  }
+
+  exit();
+}
+
+int isEndOfGame(struct extreme_arguments * arg){
+  for (int i =0; i < arg->numFrisbees; i++){
+    if(arg->frisbees[i].counter != arg->numThrows + 1) return 0;
+  }
+
+  return 1;
+}
+
+void extreme_frisbee(struct extreme_arguments * arg){
+  while (1) {
+
+    sem_wait(arg->sem);
+
+    if (isEndOfGame(arg)) {
+      sem_signal(arg->sem);
+      break;
+    }
+
+    for (int i = 0; i < arg->numFrisbees; i++){
+
+      if(arg->frisbees[i].thrower == arg->player){
+        sem_wait(arg->sem_mutex);
+        printf(1, "Pass number no: %d for frisbee %d, Thread %d is passing the frisbee to thread %d \n\n ", 
+          arg->frisbees[i].counter,
+          i+1,
+          arg->player,
+          (arg->player + 1) % arg->numPlayers
+        );
+        sem_signal(arg->sem_mutex);
+
+        sem_wait(arg->sem_mutex);
+        if(arg->frisbees[i].counter != arg->numThrows + 1)
+          arg->frisbees[i].counter++;
+        sem_signal(arg->sem_mutex);
+        arg->frisbees[i].thrower = (arg->frisbees[i].thrower + 1) % arg->numPlayers;
+      }
     }
 
     sem_signal(arg->sem);
