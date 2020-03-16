@@ -207,9 +207,7 @@ found:
 void
 init_proc_metrics(struct proc* curproc)
 {
-  acquire(&tickslock);
 	curproc->startTime = ticks;
-  release(&tickslock);
   curproc->waitTime = 0;
   curproc->lastWait = 0;
 }
@@ -1111,9 +1109,7 @@ retrieve_process_statistics(uint* totalElapsedTime, uint* totalRunTime, uint* to
   struct proc* curproc = myproc();
 
   uint endTime;
-  acquire(&tickslock);
 	endTime = ticks;
-  release(&tickslock);
 
   if(curproc->startTime > endTime || curproc->startTime == 0)
     return -1;

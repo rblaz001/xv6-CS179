@@ -107,9 +107,7 @@ exec(char *path, char **argv)
   curproc->tf->eip = elf.entry;  // main
   curproc->tf->esp = sp;
   
-  acquire(&tickslock);
 	curproc->startTime = ticks;
-  release(&tickslock);
   curproc->waitTime = 0;
   curproc->lastWait = 0;
 

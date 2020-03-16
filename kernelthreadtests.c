@@ -354,4 +354,6 @@ void KT_vs_Processes(){
     printf(1, "Total runtime is %d ms\n", runTime2 * 10);
     exit();
   }
+
+  wait();
 }
