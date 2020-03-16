@@ -438,6 +438,7 @@ clone(void* sp, int slindex, void (*fnc)(void*), void* arg)
 
   // Initializes newly acquired proc for newly created thread
   nt->pthread = cur_thread;
+  nt->parent = 0;
   nt->psl = cur_thread->psl;
   nt->slindex = slindex;
   nt->pgdir = cur_thread->pgdir;
@@ -544,6 +545,7 @@ exit(void)
   // Pass abandoned children to init.
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->parent == curproc){
+      cprintf("Parent early exit: Parent %d, Curr %d\n", p->parent->pid, curproc->pid);
       p->parent = initproc;
       if(p->state == ZOMBIE)
         wakeup1(initproc);

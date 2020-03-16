@@ -1802,7 +1802,8 @@ main(int argc, char *argv[])
 
   // kernel thread tests
   // semaphoreTest();
-  KT_vs_Processes();
+  // KT_vs_Processes();
+  Kernel_Thread_Stress_Test();
 
   // user thread test
   // userThreadsFuction();

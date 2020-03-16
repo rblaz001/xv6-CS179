@@ -357,3 +357,65 @@ void KT_vs_Processes(){
 
   wait();
 }
+
+void
+thread_exit(int* arg){
+  if(*arg == 7)
+  {
+    printf(1, "Thread Exit\n");
+    exit();
+  }
+  else
+  {
+    printf(1, "Panic: Arg passed to thread not expected value\n");
+    exit();
+  }
+}
+
+void
+Kernel_Thread_Stress_Test(void)
+{
+  int n, pid;
+  int arg = 7;
+
+  printf(1, "kernel thread stress test\n");
+
+  for(n=0; n<1; n++){
+    pid = fork();
+    if(pid < 0)
+      break;
+    if(pid != 0)
+    {
+      for(int i = 0; i < 7; i++)
+      {
+        if(KT_Create((void*)&thread_exit, &arg) == -1)
+        {
+          printf(1, "KT_Create Failed\n");
+        }
+      }
+      for(int j = 0; j < 7; j++)
+      {
+        if(KT_Join() == -1)
+        {
+          printf(1, "KT_Join failed\n");
+        }
+      }
+      printf(1, "PID %d exit\n", pid);
+      exit();
+    }
+  }
+
+  for(; n > 0; n--){
+    if(wait() < 0){
+      printf(1, "wait stopped early\n");
+      exit();
+    }
+  }
+
+  if(wait() != -1){
+    printf(1, "wait got too many\n");
+    exit();
+  }
+
+  printf(1, "kernel thread stress test OK\n");
+}
