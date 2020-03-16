@@ -638,13 +638,11 @@ scheduler(void)
 
       uint waitDiff;
       if(p->lastWait){
-        // pushcli();
-        acquire(&tickslock);
+        // acquire(&tickslock);
         waitDiff = ticks - p->lastWait;
         p->waitTime = p->waitTime + waitDiff;
         p->lastWait = ticks;
-        release(&tickslock);
-        // popcli();
+        // release(&tickslock);
       }
 
       // Switch to chosen process.  It is the process's job
@@ -699,11 +697,7 @@ yield(void)
 {
   if(myproc() != 0)
   {
-    pushcli();
-    acquire(&tickslock);
     myproc()->lastWait = ticks;
-    release(&tickslock);
-    popcli();
   }
 
   acquire(&ptable.lock);  //DOC: yieldlock
