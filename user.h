@@ -32,7 +32,7 @@ int sem_initialize(int);
 int sem_wait(int);
 int sem_signal(int);
 int sem_free(int);
-int retrieve_process_statistics(int*, int*, int*);
+int retrieve_process_statistics(uint*, uint*, uint*);
 
 // ulib.c
 int stat(const char*, struct stat*);

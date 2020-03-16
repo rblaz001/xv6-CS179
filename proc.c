@@ -638,18 +638,13 @@ scheduler(void)
 
       uint waitDiff;
       if(p->lastWait){
+        // pushcli();
         acquire(&tickslock);
         waitDiff = ticks - p->lastWait;
         p->waitTime = p->waitTime + waitDiff;
         p->lastWait = ticks;
         release(&tickslock);
-      }
-
-      if(myproc() != 0)
-      {
-        acquire(&tickslock);
-        myproc()->lastWait = ticks;
-        release(&tickslock);
+        // popcli();
       }
 
       // Switch to chosen process.  It is the process's job
@@ -692,6 +687,7 @@ sched(void)
     panic("sched running");
   if(readeflags()&FL_IF)
     panic("sched interruptible");
+   
   intena = mycpu()->intena;
   swtch(&p->context, mycpu()->scheduler);
   mycpu()->intena = intena;
@@ -701,6 +697,15 @@ sched(void)
 void
 yield(void)
 {
+  if(myproc() != 0)
+  {
+    pushcli();
+    acquire(&tickslock);
+    myproc()->lastWait = ticks;
+    release(&tickslock);
+    popcli();
+  }
+
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
   sched();
@@ -973,7 +978,9 @@ sem_sleep(struct semaphore* s)
   p->state = SEM_SLEEPING;
 
   //We call sched to schedule a new lightweight proccess
+  popcli();
   sched();
+  pushcli();
 
   // Reacquire semaphore lock.
   release(&ptable.lock);
@@ -1107,7 +1114,7 @@ KT_Join(void)
 }
 
 int
-retrieve_process_statistics(int* totalElapsedTime, int* totalRunTime, int* totalWaitTime)
+retrieve_process_statistics(uint* totalElapsedTime, uint* totalRunTime, uint* totalWaitTime)
 {
   struct proc* curproc = myproc();
 
@@ -1116,12 +1123,24 @@ retrieve_process_statistics(int* totalElapsedTime, int* totalRunTime, int* total
 	endTime = ticks;
   release(&tickslock);
 
-  if(curproc->startTime > endTime || curproc->startTime == 0 || curproc->waitTime == 0)
+  // cprintf("start time: %d\n", curproc->startTime);
+  // cprintf("wait time: %d\n", curproc->waitTime);
+  // cprintf("end time: %d\n", endTime);
+
+  if(curproc->startTime > endTime || curproc->startTime == 0)
     return -1;
 
-  *totalElapsedTime = endTime - curproc->startTime;
-  *totalWaitTime = curproc->waitTime;
-  *totalRunTime = *totalElapsedTime - curproc->waitTime;
+  // cprintf("total elapsed time: %d \n", *totalElapsedTime);
+  // cprintf("total wait time: %d \n", *totalWaitTime);
+  // cprintf("total run time: %d \n", *totalRunTime);
+
+  cprintf("elasped time address: %d \n", totalElapsedTime);
+  cprintf("wait time address: %d \n", totalWaitTime);
+  cprintf("run time address: %d \n", totalRunTime);
+
+  (*totalElapsedTime) = endTime - curproc->startTime;
+  (*totalWaitTime) = curproc->waitTime;
+  (*totalRunTime) = *totalElapsedTime - curproc->waitTime;
 
   return 0;
 }

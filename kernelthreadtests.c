@@ -66,6 +66,12 @@ void semaphoreTest()
   sem_free(mutex);
 
   printf(stdout, "semaphoreTest ok\n");
+
+  uint elapsedTime = 0;
+  uint runTime = 0;
+  uint waitTime = 0;
+  retrieve_process_statistics(&elapsedTime, &runTime, &waitTime);
+  printf(1, "elapsed time is: %d \nruntime is: %d \nwait time is: %d\n", elapsedTime, runTime, waitTime);
 }
 
 // Critical section where stdout is used to periodically display status of thread
@@ -82,20 +88,43 @@ void criticalFuction(struct sem_args* args)
     if(i % 10000 == 0)
     {
       sem_wait(args->mutex);
-      printf(stdout, "%d\n", i/100);
+      // printf(stdout, "%d\n", i/100);
       sem_signal(args->mutex);
     }
 
     if(i == 1000000)
     {
       sem_wait(args->mutex);
-      printf(stdout, "Finished\n");
+      // printf(stdout, "Finished\n");
       sem_signal(args->mutex);
     }
   }
   sem_signal(args->sem);
 
+  uint elapsedTime = 0;
+  uint runTime = 0;
+  uint waitTime = 0;
+
+  sem_wait(args->mutex);
+  printf(1, "SOURCE elasped time address: %d \n", &elapsedTime);
+  printf(1, "SOURCE wait time address: %d \n", &waitTime);
+  printf(1, "SOURCE run time address: %d \n", &runTime);
+  printf(1, "\n \n ");
+  sem_signal(args->mutex);
+
+  int res = retrieve_process_statistics(&elapsedTime, &runTime, &waitTime);
+  if (res == -1){
+    printf(stdout, "returning error");
+  }
+  else{
+    printf(stdout, "not returning error");
+  }
+  sem_wait(args->mutex);
+  printf(1, "elapsed time is: %d \nruntime is: %d \nwait time is: %d\n", elapsedTime, runTime, waitTime);
+  sem_signal(args->mutex);
+
   free(args);
+
   exit();
 }
 

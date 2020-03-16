@@ -1753,63 +1753,63 @@ main(int argc, char *argv[])
 
   printf(1, "usertests starting\n");
 
-  if(open("usertests.ran", 0) >= 0){
-    printf(1, "already ran user tests -- rebuild fs.img\n");
-    exit();
-  }
-  close(open("usertests.ran", O_CREATE));
+  // if(open("usertests.ran", 0) >= 0){
+  //   printf(1, "already ran user tests -- rebuild fs.img\n");
+  //   exit();
+  // }
+  // close(open("usertests.ran", O_CREATE));
 
-  argptest();
-  createdelete();
-  linkunlink();
-  concreate();
-  fourfiles();
-  sharedfd();
+  // argptest();
+  // createdelete();
+  // linkunlink();
+  // concreate();
+  // fourfiles();
+  // sharedfd();
 
-  bigargtest();
-  bigwrite();
-  bigargtest();
-  bsstest();
-  sbrktest();
-  // validatetest();  //This test is skipped until user arg validation bug is fixed
+  // bigargtest();
+  // bigwrite();
+  // bigargtest();
+  // bsstest();
+  // sbrktest();
+  // // validatetest();  //This test is skipped until user arg validation bug is fixed
 
-  opentest();
-  writetest();
-  writetest1();
-  createtest();
+  // opentest();
+  // writetest();
+  // writetest1();
+  // createtest();
 
-  openiputtest();
-  exitiputtest();
-  iputtest();
+  // openiputtest();
+  // exitiputtest();
+  // iputtest();
 
-  mem();
-  pipe1();
-  preempt();
-  exitwait();
+  // mem();
+  // pipe1();
+  // preempt();
+  // exitwait();
 
-  rmdot();
-  fourteen();
-  bigfile();
-  subdir();
-  linktest();
-  unlinkread();
-  dirfile();
-  iref();
-  forktest();
-  bigdir(); // slow
+  // rmdot();
+  // fourteen();
+  // bigfile();
+  // subdir();
+  // linktest();
+  // unlinkread();
+  // dirfile();
+  // iref();
+  // forktest();
+  // bigdir(); // slow
 
-  uio();
+  // uio();
 
   // kernel thread tests
   semaphoreTest();
 
   // user thread test
-  userThreadsFuction();
+  // userThreadsFuction();
 
-  frisbeeGame(4,5);
-  extremeFrisbeeGame(4,5,2);
+  // frisbeeGame(4,5);
+  // extremeFrisbeeGame(4,5,2);
 
-  exectest();
+  // exectest();
   
 
   exit();

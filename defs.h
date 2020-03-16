@@ -138,7 +138,7 @@ int             isFull(struct queue*);
 void            push_back(struct queue*, struct proc*);
 struct proc*    pop_front(struct queue*);
 void            init_proc_metrics(struct proc* curproc);
-int             retrieve_process_statistics(int*, int*, int*);
+int             retrieve_process_statistics(uint*, uint*, uint*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

@@ -96,7 +96,7 @@ sys_kt_create(void)
   char* fnc;
   char* arg;
   
-  if(argptr(0, &fnc, sizeof(void*)) || argptr(1, &arg, 0) < sizeof(void*))
+  if(argptr(0, &fnc, sizeof(int)) || argptr(1, &arg, 0) < 0)
     return -1;
 
   return KT_Create((void*)fnc, arg);
@@ -133,7 +133,10 @@ sys_sem_wait(void)
   if(index < 0 || index >= NPROC)
     return -1;
   
-  return sem_wait(index);
+  pushcli();
+  int wait_res = sem_wait(index);
+  popcli();
+  return wait_res;
 }
 
 int
@@ -147,7 +150,10 @@ sys_sem_signal(void)
   if(index < 0 || index > NPROC)
     return -1;
   
-  return sem_signal(index);
+  pushcli();
+  int signal_res = sem_signal(index);
+  popcli();
+  return signal_res;
 }
 
 int
@@ -168,16 +174,16 @@ sys_sem_free(void)
 int
 sys_retrieve_process_statistics(void)
 {
-  int* totalElapsedTime;
-  int* totalRunTime;
-  int* totalWaitTime;
+  char * totalElapsedTime;
+  char * totalRunTime;
+  char * totalWaitTime;
 
-  if(argptr(0, (char **)&totalElapsedTime, sizeof(int*)) ||
-     argptr(1, (char **)&totalRunTime, sizeof(int*)) ||
-     argptr(2, (char **)&totalWaitTime, sizeof(int*)) )
+  if(argptr(0, &totalElapsedTime, sizeof(int)) ||
+     argptr(1, &totalRunTime, sizeof(int)) ||
+     argptr(2, &totalWaitTime, sizeof(int)) )
      {
        return -1;
      }
 
-     return retrieve_process_statistics(totalElapsedTime, totalRunTime, totalWaitTime);
+     return retrieve_process_statistics( (uint *) totalElapsedTime, (uint *) totalRunTime, (uint *)totalWaitTime);
 }
