@@ -638,11 +638,9 @@ scheduler(void)
 
       uint waitDiff;
       if(p->lastWait){
-        // acquire(&tickslock);
         waitDiff = ticks - p->lastWait;
         p->waitTime = p->waitTime + waitDiff;
         p->lastWait = ticks;
-        // release(&tickslock);
       }
 
       // Switch to chosen process.  It is the process's job
@@ -1117,20 +1115,8 @@ retrieve_process_statistics(uint* totalElapsedTime, uint* totalRunTime, uint* to
 	endTime = ticks;
   release(&tickslock);
 
-  // cprintf("start time: %d\n", curproc->startTime);
-  // cprintf("wait time: %d\n", curproc->waitTime);
-  // cprintf("end time: %d\n", endTime);
-
   if(curproc->startTime > endTime || curproc->startTime == 0)
     return -1;
-
-  // cprintf("total elapsed time: %d \n", *totalElapsedTime);
-  // cprintf("total wait time: %d \n", *totalWaitTime);
-  // cprintf("total run time: %d \n", *totalRunTime);
-
-  cprintf("elasped time address: %d \n", totalElapsedTime);
-  cprintf("wait time address: %d \n", totalWaitTime);
-  cprintf("run time address: %d \n", totalRunTime);
 
   (*totalElapsedTime) = endTime - curproc->startTime;
   (*totalWaitTime) = curproc->waitTime;

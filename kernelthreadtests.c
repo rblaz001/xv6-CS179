@@ -106,9 +106,6 @@ void criticalFuction(struct sem_args* args)
   uint waitTime = 0;
 
   sem_wait(args->mutex);
-  printf(1, "SOURCE elasped time address: %d \n", &elapsedTime);
-  printf(1, "SOURCE wait time address: %d \n", &waitTime);
-  printf(1, "SOURCE run time address: %d \n", &runTime);
   printf(1, "\n \n ");
   sem_signal(args->mutex);
 
@@ -308,4 +305,53 @@ void extreme_frisbee(struct extreme_frisB_args * arg){
 
   free(arg);
   exit();
+}
+
+void simple_counter(){
+  for (volatile int i = 0; i < 100000; i++){
+    for (volatile int j = 0; j < 100; j++) {}
+  }
+  exit();
+}
+
+void simple_counter2(){
+  for (volatile int i = 0; i < 100000; i++){
+    for (volatile int j = 0; j < 100; j++) {}
+  }
+}
+
+void KT_vs_Processes(){
+
+  uint elapsedTime = 0;
+  uint runTime = 0;
+  uint waitTime = 0;
+
+  printf(1, "Multithreaded series of long task (simple_counter)\n");
+
+  for (int i = 0; i < 7; i++){
+    KT_Create((void*)&simple_counter, (void*)0);
+  }
+
+  for (int i =0; i < 7; i++){
+    KT_Join();
+  }
+
+  printf(1, "simple_counter process finished \n");
+  retrieve_process_statistics(&elapsedTime, &runTime, &waitTime);
+  printf(1, "Total runtime is %d ms\n", runTime * 10);
+
+  int pid = fork();
+  if (pid == 0){
+    printf(1, "Single Process long task (simple_counter)\n");
+    uint elapsedTime2 = 0;
+    uint runTime2 = 0;
+    uint waitTime2 = 0;
+    for(int i =0; i < 7; i++){
+      simple_counter2();
+    }
+    printf(1, "simple_counter process finished \n");
+    retrieve_process_statistics(&elapsedTime2, &runTime2, &waitTime2);
+    printf(1, "Total runtime is %d ms\n", runTime2 * 10);
+    exit();
+  }
 }

@@ -1801,7 +1801,8 @@ main(int argc, char *argv[])
   // uio();
 
   // kernel thread tests
-  semaphoreTest();
+  // semaphoreTest();
+  KT_vs_Processes();
 
   // user thread test
   // userThreadsFuction();
